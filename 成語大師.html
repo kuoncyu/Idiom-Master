@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成語大師 - 高密度挑戰版</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&display=swap');
+
+        :root {
+            --paper: #fdfaf4; --ink: #2c3e50; --stamp: #c0392b; 
+            --jade: #27ae60; --border: #d4c4a8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Noto Serif TC', serif; background-color: #e0d5c1;
+            padding: 10px; display: flex; flex-direction: column; align-items: center; color: var(--ink);
+            min-height: 100vh;
+        }
+
+        .main-container {
+            background: var(--paper); padding: 15px; border: 2px solid var(--ink);
+            box-shadow: 0 0 20px rgba(0,0,0,0.2); width: 100%; max-width: 450px; border-radius: 4px;
+        }
+
+        header { text-align: center; margin-bottom: 5px; }
+        h1 { font-size: 1.4rem; color: var(--stamp); border: 2px solid var(--stamp); display: inline-block; padding: 4px 12px; }
+        
+        .status-bar { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; font-size: 14px; font-weight: bold; background: #eee5d3; padding: 6px 10px; border-radius: 4px; }
+        #remain-count { color: var(--stamp); font-size: 16px; }
+
+        #explanation-box {
+            background: #f9f3e6; border: 1px dashed var(--stamp); border-radius: 4px;
+            margin-bottom: 10px; padding: 10px; min-height: 95px;
+        }
+        .exp-title { color: var(--stamp); font-weight: 900; font-size: 16px; margin-bottom: 3px; }
+        .exp-mean { font-size: 13px; color: #333; margin-bottom: 4px; line-height: 1.3; }
+        .exp-example { font-size: 12px; color: #666; font-style: italic; border-left: 2px solid var(--border); padding-left: 6px; }
+
+        .mode-selector { display: flex; margin-bottom: 10px; border: 1px solid var(--ink); }
+        .mode-selector button { flex: 1; padding: 8px; cursor: pointer; border: none; background: var(--paper); font-family: inherit; font-weight: bold; }
+        .mode-selector button.active { background: var(--ink); color: var(--paper); }
+
+        #game-board {
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background-color: var(--border);
+            border: 2px solid var(--ink);
+            margin-bottom: 10px;
+        }
+
+        .cell { 
+            background-color: var(--paper);
+            border: 0.5px solid rgba(212,196,168,0.4);
+            display: flex; justify-content: center; align-items: center; 
+            font-size: clamp(14px, 4.5vw, 22px); font-weight: 900; 
+            position: relative; width: 100%; height: 100%;
+        }
+        .empty { background-color: #f1ede4; }
+        .fixed { color: var(--ink); } /* 提示字 */
+        .found { background-color: #e8f5e9 !important; color: var(--jade) !important; }
+        .selected { background-color: #d5e6f3 !important; }
+
+        input {
+            width: 100%; height: 100%; border: none; 
+            text-align: center; font-size: inherit; font-weight: 900; 
+            color: var(--stamp); background: transparent; outline: none; 
+            padding: 0; margin: 0; display: block;
+        }
+        .correct-fill { color: var(--jade) !important; font-weight: 900; }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        button.main-btn { padding: 10px; border: 1px solid var(--ink); border-radius: 4px; font-weight: bold; cursor: pointer; font-family: inherit; }
+        .btn-stamp { background: var(--stamp); color: white; grid-column: span 2; border: none; }
+
+        .settings-panel { margin-top: 15px; text-align: left; font-size: 11px; color: #777; border-top: 1px solid #ccc; padding-top: 5px; }
+        textarea { width: 100%; height: 60px; margin-top: 5px; background: #f9f6f0; border: 1px solid var(--border); padding: 5px; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+<audio id="bgm" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-17.mp3" type="audio/mpeg"></audio>
+
+<div class="main-container">
+    <header><h1>成語·學苑</h1></header>
+
+    <div class="status-bar">
+        <div>琴音：<button onclick="toggleBGM()" id="bgm-btn" style="padding:0 5px; cursor:pointer;">播放</button></div>
+        <div>剩餘成語：<span id="remain-count">0</span> 組</div>
+    </div>
+
+    <div id="explanation-box">
+        <div id="exp-content">
+            <div class="exp-title">挑戰開始</div>
+            <div class="exp-mean">系統將嘗試高密度出題，請點擊「更換卷軸」開始。</div>
+        </div>
+    </div>
+
+    <div class="mode-selector">
+        <button id="mode-fill-btn" class="active" onclick="switchMode('fill')">填空尋蹤</button>
+        <button id="mode-find-btn" onclick="switchMode('find')">墨中覓詞</button>
+    </div>
+
+    <div id="game-board"></div>
+
+    <div class="btn-group">
+        <button class="main-btn" onclick="checkAll()" style="background:var(--ink); color:white;">核對答案</button>
+        <button class="main-btn" onclick="revealAll()" style="background:#7f8c8d; color:white;">揭曉謎底</button>
+        <button class="main-btn btn-stamp" onclick="initGame()">更換卷軸 (重新出題)</button>
+    </div>
+
+    <div class="settings-panel">
+        <strong>詞庫設定：</strong>
+        <textarea id="custom-lib">一箭雙鵰|比喻一舉兩得。|他在商場併購中解決債務又擴大版圖，真是一箭雙鵰。
+一鳴驚人|比喻平時無名，一舉動驚人。|他在這次競賽中奪冠，真是一鳴驚人。
+畫蛇添足|比喻做多餘的事，反而有害。|這篇文章結尾加這段簡直是畫蛇添足。
+狐假虎威|憑藉權勢欺壓他人。|他只不過是經理親戚，就這樣狐假虎威地教訓大家。
+亡羊補牢|出錯後設法補救。|現在開始努力亡羊補牢，期末考還有機會。
+龍飛鳳舞|形容書法筆勢有力。|王大師的書法龍飛鳳舞，深受收藏家喜愛。
+蛛絲馬跡|比喻極微小的線索。|警察在現場搜尋，不放過任何蛛絲馬跡。
+拔苗助長|急於求成，反而弄糟。|教育孩子要循序漸進，千萬不能拔苗助長。
+井底之蛙|比喻見識淺陋的人。|如果不去世界看看，很容易變成井底之蛙。
+破釜沉舟|比喻下決心不留後路。|他破釜沉舟地辭去工作，一心一意去創業。
+胸有成竹|做事之前已有通盤考量。|面對這次提報，他早已胸有成竹。
+水落石出|比喻事情真相大白。|經過警方調查，這件案子終於水落石出。
+刻舟求劍|比喻拘泥成法，不知變通。|時代在變，我們不能刻舟求劍，必須與時俱進。
+掩耳盜鈴|比喻自欺欺人。|明明大家都知道了，他還在掩耳盜鈴，試圖隱瞞。
+臥薪嚐膽|形容刻苦自勵，發憤圖強。|為了重振家業，他臥薪嚐膽，終於在十年後大展鴻圖。
+廢寢忘食|形容做事極為專心，努力不懈。|他為了完成這項研究，簡直到了廢寢忘食的地步。
+鍥而不捨|比喻有恆心，不輕易放棄。|憑著鍥而不捨的精神，他終於破解了這道數學難題。
+馬到成功|形容事情順利。|祝你這次考試馬到成功！
+力不從心|心裡想做，力量卻不夠。|年紀大了，做粗活總覺得力不從心。
+口是心非|嘴上說的和心裡想的不一樣。|他這人總是口是心非，難以信任。</textarea>
+    </div>
+</div>
+
+<script>
+    let currentMode = 'fill'; 
+    let board = [];
+    let placedIdioms = [];
+    let selectedCoords = [];
+    let idiomDict = {};
+    let hintMap = {}; 
+    let isBGMPlaying = false;
+
+    // Web Audio 音效
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(f, d) {
+        try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.frequency.setValueAtTime(f, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(); o.stop(audioCtx.currentTime + d);
+        } catch(e) {}
+    }
+
+    function toggleBGM() {
+        const bgm = document.getElementById('bgm');
+        if(!isBGMPlaying) { 
+            bgm.play().catch(e => alert("請先與頁面互動（點擊任意處）才能播放音樂")); 
+            document.getElementById('bgm-btn').innerText = "暫停"; 
+        } else { 
+            bgm.pause(); 
+            document.getElementById('bgm-btn').innerText = "播放"; 
+        }
+        isBGMPlaying = !isBGMPlaying;
+    }
+
+    function initGame() {
+        const boardEl = document.getElementById('game-board');
+        boardEl.innerHTML = '';
+        const libLines = document.getElementById('custom-lib').value.split('\n').filter(l => l.includes('|'));
+        idiomDict = {};
+        libLines.forEach(l => {
+            const [w, m, e] = l.split('|');
+            idiomDict[w.trim()] = { mean: m.trim(), example: e ? e.trim() : "（暫無例句）" };
+        });
+
+        // --- 高密度生成演算法 V17 ---
+        let maxRetries = 20; // 盤面重試次數
+        let bestBoardState = null;
+        let maxPlacedCount = 0;
+
+        for(let attempt = 0; attempt < maxRetries; attempt++) {
+            // 每次嘗試都重置
+            board = Array.from({ length: 10 }, () => Array(10).fill(null));
+            placedIdioms = [];
+            
+            // 隨機打亂詞庫
+            let words = Object.keys(idiomDict).sort(() => Math.random() - 0.5);
+            
+            // 嘗試將每一個詞都放進去 (暴力填充)
+            for (let word of words) {
+                // 1. 先嘗試交叉放置 (優先)
+                let connected = tryConnect(word);
+                // 2. 如果填空模式下無法交叉，嘗試尋找空位獨立放置 (Island Strategy)
+                // 這樣可以大幅增加畫面上的成語數量
+                if (!connected && currentMode === 'fill') {
+                     tryPlaceFreely(word);
+                }
+                // 找找看模式本來就是隨機放，邏輯在 generateFindModeLogic
+            }
+
+            // 紀錄最佳結果
+            if (currentMode === 'fill') {
+                if (placedIdioms.length > maxPlacedCount) {
+                    maxPlacedCount = placedIdioms.length;
+                    // 深拷貝 board 和 placedIdioms 以保留最佳狀態
+                    bestBoardState = {
+                        board: JSON.parse(JSON.stringify(board)),
+                        placedIdioms: JSON.parse(JSON.stringify(placedIdioms))
+                    };
+                }
+                // 如果已經填了超過 8 個，就很棒了，提早結束
+                if (placedIdioms.length >= 8) break;
+            } else {
+                // 找找看模式
+                let success = generateFindModeLogic(words);
+                if (success) { // 找找看模式只要有 6 個以上就算成功
+                     bestBoardState = {
+                        board: JSON.parse(JSON.stringify(board)),
+                        placedIdioms: JSON.parse(JSON.stringify(placedIdioms))
+                    };
+                    break;
+                }
+            }
+        }
+
+        // 恢復最佳狀態
+        if (bestBoardState) {
+            board = bestBoardState.board;
+            placedIdioms = bestBoardState.placedIdioms;
+        } else {
+            // 如果真的運氣太差，就用最後一次的結果 (極少發生)
+        }
+
+        hintMap = {}; // 重置提示
+        if (currentMode === 'fill') {
+            generateHints();
+            renderFillBoard();
+        } else {
+            renderFindBoard();
+        }
+        updateRemainCount();
+        updateExplanationBox("挑戰開始", `本次共生成 ${placedIdioms.length} 組成語，請加油！`);
+    }
+
+    // --- 填充邏輯 ---
+
+    // 嘗試在任何空位放置 (不一定要交叉)
+    function tryPlaceFreely(word) {
+        // 嘗試隨機位置 50 次
+        for(let i=0; i<50; i++) {
+            let isV = Math.random() > 0.5;
+            let r = Math.floor(Math.random() * (isV ? 7 : 10));
+            let c = Math.floor(Math.random() * (isV ? 10 : 7));
+            if (canPlace(word, isV, r, c)) {
+                placeToBoard(word, isV, r, c);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function tryConnect(word) {
+        if(placedIdioms.some(i => i.word === word)) return false;
+        // 收集所有可能的交叉點
+        let possible = [];
+        for(let p of placedIdioms) {
+            for(let i=0; i<4; i++) {
+                for(let j=0; j<4; j++) {
+                    if(p.word[i] === word[j]) {
+                        let isV = !p.isV, r = isV ? p.r - j : p.r + i, c = isV ? p.c + i : p.c - j;
+                        if(canPlace(word, isV, r, c)) possible.push({word, isV, r, c});
+                    }
+                }
+            }
+        }
+        if(possible.length > 0) {
+            const spot = possible[Math.floor(Math.random() * possible.length)];
+            placeToBoard(spot.word, spot.isV, spot.r, spot.c);
+            return true;
+        }
+        return false;
+    }
+
+    function canPlace(word, isV, r, c) {
+        if(r<0 || c<0 || (isV && r+4>10) || (!isV && c+4>10)) return false;
+        for(let i=0; i<4; i++) {
+            let curR = isV?r+i:r, curC = isV?c:c+i;
+            // 檢查衝突：如果格子有字，必須跟我要填的字一樣
+            if(board[curR][curC] !== null && board[curR][curC] !== word[i]) return false;
+            
+            // 進階檢查：避免過度擁擠導致無法辨識 (可選，目前先不加，追求高密度)
+        }
+        return true;
+    }
+
+    function placeToBoard(word, isV, r, c) {
+        for(let i=0; i<4; i++) board[isV?r+i:r][isV?c:c+i] = word[i];
+        placedIdioms.push({word, isV, r, c, done: false});
+    }
+
+    // --- 找找看模式邏輯 ---
+    function generateFindModeLogic(words) {
+        board = Array.from({ length: 10 }, () => Array(10).fill(''));
+        placedIdioms = [];
+        let count = 0;
+        
+        for(let word of words) {
+            // 嘗試多次放置
+            for(let i=0; i<20; i++) {
+                let isV = Math.random() > 0.5;
+                let r = Math.floor(Math.random() * (isV ? 7 : 10));
+                let c = Math.floor(Math.random() * (isV ? 10 : 7));
+                let can = true;
+                for(let k=0; k<4; k++) if(board[isV?r+k:r][isV?c:c+k] !== '') { can = false; break; }
+                if(can) {
+                    for(let k=0; k<4; k++) board[isV?r+k:r][isV?c:c+k] = word[k];
+                    placedIdioms.push({word, done: false, r, c, isV}); 
+                    count++;
+                    break; // 成功放了一個就換下一個詞
+                }
+            }
+            if(count >= 12) break; // 找找看模式上限 12 個
+        }
+        return count >= 6; // 至少要有 6 個才算成功
+    }
+
+    // --- 渲染與互動 ---
+    function generateHints() {
+        placedIdioms.forEach(item => {
+            const indices = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+            const hintIndices = indices.slice(0, 2); 
+            hintIndices.forEach(idx => {
+                const r = item.isV ? item.r + idx : item.r;
+                const c = item.isV ? item.c : item.c + idx;
+                hintMap[`${r},${c}`] = true;
+            });
+        });
+    }
+
+    function renderFillBoard() {
+        const boardEl = document.getElementById('game-board');
+        for(let r=0; r<10; r++) {
+            for(let c=0; c<10; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell' + (board[r][c] ? '' : ' empty');
+                if(board[r][c]) {
+                    if(hintMap[`${r},${c}`]) {
+                        cell.innerText = board[r][c]; cell.classList.add('fixed');
+                    } else {
+                        const input = document.createElement('input');
+                        input.maxLength = 1; input.dataset.ans = board[r][c];
+                        input.addEventListener('input', (e) => {
+                            if(e.target.value === input.dataset.ans) {
+                                input.classList.add('correct-fill');
+                                checkIdiomCompletion(r, c);
+                            }
+                        });
+                        cell.appendChild(input);
+                    }
+                }
+                boardEl.appendChild(cell);
+            }
+        }
+    }
+
+    function renderFindBoard() {
+        const filler = "的一是在有不了中大來上國個到說們為子和人但也以得這出下著地於自後就而時可生能";
+        const boardEl = document.getElementById('game-board');
+        for(let r=0; r<10; r++) {
+            for(let c=0; c<10; c++) {
+                if(board[r][c] === '') board[r][c] = filler[Math.floor(Math.random()*filler.length)];
+                const cell = document.createElement('div');
+                cell.className = 'cell'; cell.innerText = board[r][c];
+                cell.onclick = () => handleFindClick(r, c, cell);
+                boardEl.appendChild(cell);
+            }
+        }
+    }
+
+    function checkIdiomCompletion(r, c) {
+        placedIdioms.forEach(item => {
+            if(item.done) return;
+            let current = ""; let full = true; let belongs = false;
+            for(let i=0; i<4; i++){
+                let cr = item.isV ? item.r + i : item.r;
+                let cc = item.isV ? item.c : item.c + i;
+                if(cr === r && cc === c) belongs = true;
+                const el = document.getElementById('game-board').children[cr*10+cc];
+                const input = el.querySelector('input');
+                let val = input ? input.value : el.innerText;
+                if(input && val !== input.dataset.ans) full = false;
+                current += val;
+            }
+            if(belongs && full && current === item.word) {
+                item.done = true; playBeep(880, 0.2); 
+                updateExplanation(item.word); updateRemainCount();
+            }
+        });
+    }
+
+    function handleFindClick(r, c, el) {
+        if(el.classList.contains('found')) return;
+        if(el.classList.contains('selected')) {
+            el.classList.remove('selected');
+            selectedCoords = selectedCoords.filter(p => !(p.r==r && p.c==c));
+        } else if(selectedCoords.length < 4) {
+            el.classList.add('selected');
+            selectedCoords.push({r, c});
+        }
+        if(selectedCoords.length === 4) {
+            const word = selectedCoords.map(p => board[p.r][p.c]).join('');
+            const match = placedIdioms.find(i => !i.done && (i.word===word || i.word===word.split('').reverse().join('')));
+            if(match) {
+                match.done = true; playBeep(1000, 0.2);
+                selectedCoords.forEach(p => document.getElementById('game-board').children[p.r*10+p.c].className = 'cell found');
+                updateExplanation(match.word); updateRemainCount();
+                selectedCoords = [];
+                if(placedIdioms.every(i => i.done)) { playBeep(1200, 0.5); alert("🎉 完美大功告成！"); }
+            } else {
+                setTimeout(() => {
+                    selectedCoords.forEach(p => document.getElementById('game-board').children[p.r*10+p.c].classList.remove('selected'));
+                    selectedCoords = [];
+                }, 300);
+            }
+        }
+    }
+
+    function updateRemainCount() { document.getElementById('remain-count').innerText = placedIdioms.filter(i => !i.done).length; }
+    function updateExplanationBox(title, mean, example="") {
+        document.getElementById('exp-content').innerHTML = `
+            <div class="exp-title">【${title}】</div>
+            <div class="exp-mean"><strong>解釋：</strong>${mean}</div>
+            ${example ? `<div class="exp-example"><strong>例句：</strong>${example}</div>` : ""}
+        `;
+    }
+    function updateExplanation(word) { const data = idiomDict[word]; updateExplanationBox(word, data.mean, data.example); }
+    function switchMode(m) { currentMode = m; document.getElementById('mode-fill-btn').className = m==='fill'?'active':''; document.getElementById('mode-find-btn').className = m==='find'?'active':''; initGame(); }
+    function checkAll() {
+        const ins = document.querySelectorAll('input'); let ok = 0;
+        ins.forEach(i => { if(i.value === i.dataset.ans) { i.classList.add('correct-fill'); ok++; } });
+        alert(`目前正確數：${ok}`);
+    }
+    function revealAll() {
+        if(!confirm("揭曉謎底？")) return;
+        document.querySelectorAll('input').forEach(i => { i.value = i.dataset.ans; i.disabled = true; });
+        placedIdioms.forEach(item => {
+            if(currentMode==='find') item.coords.forEach(p => document.getElementById('game-board').children[p.r*10+p.c].classList.add('found'));
+            item.done = true;
+        });
+        updateRemainCount();
+    }
+
+    initGame();
+</script>
+
+</body>
+</html>
