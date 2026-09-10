@@ -2,467 +2,1082 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>成語大師 - 高密度挑戰版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>成語轉珠爬塔戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap');
 
         :root {
-            --paper: #fdfaf4; --ink: #2c3e50; --stamp: #c0392b; 
-            --jade: #27ae60; --border: #d4c4a8;
+            --paper-bg: #e6d9b8;
+            --paper-panel: #f6efdb;
+            --ink: #2b2420;
+            --ink-soft: #6b5f4f;
+            --seal: #ab2a20;
+            --seal-deep: #7a1f18;
+            --gold: #c9a227;
+            --jade: #4d7c4d;
+            --border-ink: #a8916a;
+            --select-ink: #42576b;
+            --orb-size: clamp(44px, 13.5vw, 62px);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { font-family: "Noto Serif TC", "PMingLiU", serif; }
 
         body {
-            font-family: 'Noto Serif TC', serif; background-color: #e0d5c1;
-            padding: 10px; display: flex; flex-direction: column; align-items: center; color: var(--ink);
-            min-height: 100vh;
+            background-color: var(--paper-bg);
+            color: var(--ink);
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; margin: 0; padding: 15px 10px;
+            overflow-x: hidden; user-select: none;
+            background-image:
+                radial-gradient(circle at 15% 10%, rgba(255,255,255,0.45), transparent 42%),
+                radial-gradient(circle at 85% 15%, rgba(139,115,85,0.10), transparent 45%),
+                radial-gradient(circle at 30% 90%, rgba(139,115,85,0.14), transparent 50%),
+                radial-gradient(circle at 90% 85%, rgba(255,255,255,0.3), transparent 40%),
+                repeating-linear-gradient(115deg, rgba(90,70,40,0.025) 0px, rgba(90,70,40,0.025) 1px, transparent 1px, transparent 4px);
         }
 
-        .main-container {
-            background: var(--paper); padding: 15px; border: 2px solid var(--ink);
-            box-shadow: 0 0 20px rgba(0,0,0,0.2); width: 100%; max-width: 450px; border-radius: 4px;
+        .app-title {
+            font-weight: 900; font-size: 2.3rem; color: var(--seal);
+            text-shadow: 2px 2px 0 rgba(43,36,32,0.12);
+            letter-spacing: 3px; margin: 2px 0 6px;
         }
 
-        header { text-align: center; margin-bottom: 5px; }
-        h1 { font-size: 1.4rem; color: var(--stamp); border: 2px solid var(--stamp); display: inline-block; padding: 4px 12px; }
-        
-        .status-bar { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; font-size: 14px; font-weight: bold; background: #eee5d3; padding: 6px 10px; border-radius: 4px; }
-        #remain-count { color: var(--stamp); font-size: 16px; }
-
-        #explanation-box {
-            background: #f9f3e6; border: 1px dashed var(--stamp); border-radius: 4px;
-            margin-bottom: 10px; padding: 10px; min-height: 95px;
+        .input-box {
+            background: rgba(255,255,255,0.55); border: 2px solid var(--border-ink);
+            color: var(--ink); text-align: center; font-size: 20px; letter-spacing: 3px;
+            outline: none; border-radius: 12px; padding: 10px; width: 220px;
+            transition: all 0.3s ease; box-shadow: inset 0 2px 8px rgba(90,70,40,0.15);
         }
-        .exp-title { color: var(--stamp); font-weight: 900; font-size: 16px; margin-bottom: 3px; }
-        .exp-mean { font-size: 13px; color: #333; margin-bottom: 4px; line-height: 1.3; }
-        .exp-example { font-size: 12px; color: #666; font-style: italic; border-left: 2px solid var(--border); padding-left: 6px; }
+        .input-box:focus { border-color: var(--seal); box-shadow: 0 0 16px rgba(171,42,32,0.3); }
 
-        .mode-selector { display: flex; margin-bottom: 10px; border: 1px solid var(--ink); }
-        .mode-selector button { flex: 1; padding: 8px; cursor: pointer; border: none; background: var(--paper); font-family: inherit; font-weight: bold; }
-        .mode-selector button.active { background: var(--ink); color: var(--paper); }
-
-        #game-board {
-            display: grid; 
-            grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(10, 1fr);
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            background-color: var(--border);
-            border: 2px solid var(--ink);
-            margin-bottom: 10px;
+        .glass-panel {
+            background: var(--paper-panel); border: 1px solid var(--border-ink);
+            border-radius: 18px; padding: 22px; max-width: 480px; width: 100%;
+            text-align: center; box-shadow: 0 12px 32px rgba(90,70,40,0.22), inset 0 0 50px rgba(255,255,255,0.35);
+            color: var(--ink);
         }
 
-        .cell { 
-            background-color: var(--paper);
-            border: 0.5px solid rgba(212,196,168,0.4);
-            display: flex; justify-content: center; align-items: center; 
-            font-size: clamp(14px, 4.5vw, 22px); font-weight: 900; 
-            position: relative; width: 100%; height: 100%;
+        #audio-ctrl {
+            position: absolute; top: 15px; right: 15px;
+            background: rgba(255,255,255,0.5); border-radius: 50%; width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center; font-size: 20px;
+            cursor: pointer; border: 1px solid var(--border-ink); transition: 0.3s; z-index: 50; color: var(--ink);
         }
-        .empty { background-color: #f1ede4; }
-        .fixed { color: var(--ink); } /* 提示字 */
-        .found { background-color: #e8f5e9 !important; color: var(--jade) !important; }
-        .selected { background-color: #d5e6f3 !important; }
+        #audio-ctrl:hover { background: rgba(255,255,255,0.85); transform: scale(1.05); }
+        #audio-ctrl.bg-blue-500\/30 { background: rgba(171,42,32,0.18); border-color: var(--seal); }
 
-        input {
-            width: 100%; height: 100%; border: none; 
-            text-align: center; font-size: inherit; font-weight: 900; 
-            color: var(--stamp); background: transparent; outline: none; 
-            padding: 0; margin: 0; display: block;
+        .screen { display: none; flex-direction: column; align-items: center; gap: 12px; }
+        .screen.active { display: flex; }
+
+        .subtitle { color: var(--ink-soft); font-size: 0.9rem; margin: -6px 0 4px; }
+        .credits-text { font-size: 0.68rem; color: var(--ink-soft); margin-top: 8px; opacity: 0.8; }
+        .rules-box {
+            background: rgba(255,255,255,0.35); border-radius: 12px; padding: 14px 16px;
+            text-align: left; font-size: 0.86rem; line-height: 1.85; color: var(--ink-soft); width: 100%;
+            border: 1px solid rgba(168,145,106,0.4);
         }
-        .correct-fill { color: var(--jade) !important; font-weight: 900; }
+        .primary-btn {
+            background: linear-gradient(135deg, var(--seal-deep), var(--seal)); color: #f6efdb; font-weight: 700;
+            padding: 12px 30px; border-radius: 14px; border: none; cursor: pointer;
+            box-shadow: 0 8px 18px rgba(171,42,32,0.35); transition: 0.2s; font-size: 1rem; width: 100%;
+        }
+        .primary-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .secondary-btn {
+            background: rgba(255,255,255,0.5); color: var(--ink); font-weight: 600;
+            padding: 10px 22px; border-radius: 14px; border: 1px solid var(--border-ink);
+            cursor: pointer; width: 100%; transition: 0.2s;
+        }
+        .secondary-btn:hover { background: rgba(255,255,255,0.85); }
 
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button.main-btn { padding: 10px; border: 1px solid var(--ink); border-radius: 4px; font-weight: bold; cursor: pointer; font-family: inherit; }
-        .btn-stamp { background: var(--stamp); color: white; grid-column: span 2; border: none; }
+        .leaderboard-list { width: 100%; max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin: 4px 0 8px; }
+        .lb-row { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 8px; align-items: center; background: rgba(255,255,255,0.4); padding: 8px 12px; border-radius: 10px; font-size: 0.88rem; border: 1px solid rgba(168,145,106,0.25); }
+        .lb-row.lb-top { background: rgba(201,162,39,0.16); border: 1px solid rgba(201,162,39,0.5); }
+        .lb-rank { font-weight: 900; text-align: center; }
+        .lb-name { text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .lb-floor { color: var(--seal); font-weight: 700; white-space: nowrap; }
+        .lb-date { color: var(--ink-soft); font-size: 0.72rem; white-space: nowrap; }
+        .final-floor-num { color: var(--seal); font-weight: 900; font-size: 1.3rem; }
 
-        .settings-panel { margin-top: 15px; text-align: left; font-size: 11px; color: #777; border-top: 1px solid #ccc; padding-top: 5px; }
-        textarea { width: 100%; height: 60px; margin-top: 5px; background: #f9f6f0; border: 1px solid var(--border); padding: 5px; font-size: 11px; }
+        #screen-game.active { width: 100%; max-width: 480px; }
+        .floor-header { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .floor-num-badge {
+            background: linear-gradient(135deg, var(--seal-deep), var(--seal)); padding: 6px 14px; border-radius: 999px;
+            font-weight: 900; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(171,42,32,0.3); white-space: nowrap; color: #f6efdb;
+        }
+        .next-boss-info { font-size: 0.64rem; color: var(--ink-soft); text-align: center; flex: 1; padding: 0 6px; line-height: 1.4; }
+        .quit-btn { background: rgba(255,255,255,0.5); border: 1px solid var(--border-ink); border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 1rem; flex-shrink: 0; color: var(--ink); }
+
+        .play-area { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+        .combo-display { text-align: center; font-size: 1.4rem; font-weight: 900; color: var(--gold); text-shadow: 0 0 12px rgba(201,162,39,0.55); opacity: 0; height: 1.7rem; margin: 0; transition: opacity 0.2s; }
+        .combo-display.combo-show { animation: comboPop 1.4s ease forwards; }
+        .combo-display.combo-mega { color: var(--seal); text-shadow: 0 0 16px rgba(171,42,32,0.55); }
+        @keyframes comboPop {
+            0% { transform: scale(0.4) translateY(14px); opacity: 0; }
+            25% { transform: scale(1.2); opacity: 1; }
+            70% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        .monster-area { position: relative; width: 100%; text-align: center; padding: 4px 0 2px; }
+        .monster-visual { position: relative; height: 92px; display: flex; align-items: center; justify-content: center; }
+        .monster-emoji { font-size: 62px; filter: drop-shadow(0 6px 8px rgba(90,70,40,0.35)); transition: 0.2s; }
+        .monster-name { font-weight: 900; font-size: 1.02rem; margin: 2px 0 6px; color: var(--ink); }
+        .tier-badge { display: inline-block; font-size: 0.7rem; font-weight: 800; padding: 3px 10px; border-radius: 999px; margin-bottom: 4px; background: rgba(43,36,32,0.06); color: var(--ink-soft); }
+        .tier-badge.tier-mini { background: rgba(201,162,39,0.18); color: #8a6d10; border: 1px solid rgba(201,162,39,0.5); }
+        .tier-badge.tier-boss { background: rgba(171,42,32,0.15); color: var(--seal); border: 1px solid rgba(171,42,32,0.5); animation: bossBadgePulse 1.2s infinite; }
+        @keyframes bossBadgePulse { 0%,100% { box-shadow: 0 0 0 rgba(171,42,32,0.4); } 50% { box-shadow: 0 0 12px rgba(171,42,32,0.6); } }
+        .monster-area.tier-mini .monster-emoji { filter: drop-shadow(0 0 14px rgba(201,162,39,0.5)); animation: miniFloat 2s ease-in-out infinite; }
+        .monster-area.tier-boss .monster-emoji { font-size: 76px; filter: drop-shadow(0 0 20px rgba(171,42,32,0.55)); animation: bossFloat 1.4s ease-in-out infinite; }
+        @keyframes bossFloat { 0%,100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.08) rotate(-2deg); } }
+        @keyframes miniFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+        .hpbar { width: 100%; height: 14px; background: rgba(43,36,32,0.08); border-radius: 8px; overflow: hidden; border: 1px solid rgba(168,145,106,0.4); }
+        .hpbar-fill { height: 100%; transition: width 0.4s ease, background 0.3s ease; }
+        .monster-fill { background: linear-gradient(to right, #c9564a, var(--seal)); }
+        .player-fill { background: linear-gradient(to right, #7fae7f, var(--jade)); }
+        .hp-text { font-size: 0.72rem; color: var(--ink-soft); text-align: right; margin-top: 2px; }
+
+        .player-area { width: 100%; margin-top: 6px; position: relative; }
+        .player-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; font-size: 0.85rem; color: var(--ink); font-weight: 700; }
+
+        .effects-layer { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+        .float-text {
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            font-weight: 900; white-space: nowrap; text-shadow: 0 2px 4px rgba(255,255,255,0.6);
+            animation: floatUp 1.1s ease-out forwards; font-size: 0.95rem;
+        }
+        .float-text.attack { color: var(--seal); font-size: 1.1rem; }
+        .float-text.hurt { color: var(--seal-deep); font-size: 1.5rem; top: 30%; }
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translate(-50%, -40%) scale(0.8); }
+            15% { opacity: 1; transform: translate(-50%, -60%) scale(1.05); }
+            100% { opacity: 0; transform: translate(-50%, -130%) scale(1); }
+        }
+
+        #timer-bar-wrap { width: 100%; max-width: 340px; height: 7px; background: rgba(43,36,32,0.08); border-radius: 4px; overflow: hidden; margin: 4px auto 8px; border: 1px solid rgba(168,145,106,0.35); }
+        #timer-bar { height: 100%; width: 100%; background: linear-gradient(to right, var(--gold), var(--seal)); }
+
+        .turn-message { min-height: 1.4rem; text-align: center; font-size: 0.92rem; font-weight: 700; color: var(--ink); opacity: 0; transition: opacity 0.3s; padding: 0 8px; }
+        .turn-message.show { opacity: 1; }
+        .turn-message b { color: var(--seal); }
+
+        .board {
+            display: grid; gap: 6px; justify-content: center; margin: 4px auto 2px; touch-action: none;
+        }
+        .orb {
+            position: relative; width: var(--orb-size); height: var(--orb-size); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: calc(var(--orb-size) * 0.46); font-weight: 700; color: var(--ink);
+            cursor: grab; user-select: none; touch-action: none; transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+            background: linear-gradient(160deg, #fbf6e6, #ecdfbc 88%);
+            border: 1px solid var(--border-ink);
+            box-shadow: inset 0 -3px 6px rgba(139,115,85,0.22), inset 0 2px 3px rgba(255,255,255,0.65), 0 2px 5px rgba(90,70,40,0.25);
+        }
+        .orb.held { border-color: var(--select-ink); box-shadow: 0 0 0 3px rgba(66,87,107,0.55), 0 0 16px rgba(66,87,107,0.5); transform: scale(1.14); z-index: 5; }
+        .orb.matched { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,162,39,0.75), 0 0 18px rgba(201,162,39,0.8); animation: matchPop 0.3s ease forwards; }
+        @keyframes matchPop { 0% { transform: scale(1); } 50% { transform: scale(1.25); filter: brightness(1.3); } 100% { transform: scale(0.3); opacity: 0; } }
+        .orb.drop-in { animation: tileDropIn 0.4s ease both; }
+        @keyframes tileDropIn { 0% { opacity: 0; transform: translateY(-46px); } 100% { opacity: 1; transform: translateY(0); } }
+        .orb.empty { visibility: hidden; }
+        .board-busy { pointer-events: none; }
+
+        .hint-text-small { font-size: 0.72rem; color: var(--ink-soft); text-align: center; margin-top: 4px; line-height: 1.5; }
+
+        .shake { animation: shakeAnim 0.4s; }
+        @keyframes shakeAnim { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+
+        .idiom-reveal {
+            position: absolute; inset: 0; background: rgba(20,15,10,0.92);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s; z-index: 40; border-radius: 16px; padding: 16px;
+        }
+        .idiom-reveal.show { opacity: 1; }
+        .idiom-reveal-combo { font-size: 1.25rem; font-weight: 900; color: var(--gold); text-shadow: 0 0 14px rgba(201,162,39,0.7); margin-bottom: 2px; }
+        .idiom-reveal-row { display: flex; flex-direction: column; align-items: center; gap: 4px; animation: revealRowIn 0.4s ease both; }
+        @keyframes revealRowIn { 0% { opacity: 0; transform: translateY(10px) scale(0.9); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        .idiom-reveal-word { font-size: 2rem; font-weight: 900; letter-spacing: 4px; color: #f5e6b8; text-shadow: 0 0 16px rgba(201,162,39,0.6); }
+        .idiom-reveal-char { display: inline-block; opacity: 0; animation: charPop 0.4s ease forwards; }
+        @keyframes charPop { 0% { opacity: 0; transform: translateY(-14px) scale(0.5) rotate(-8deg); } 100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); } }
+        .idiom-reveal-hint { font-size: 0.85rem; color: #d9cdb0; max-width: 320px; text-align: center; line-height: 1.5; }
+        .idiom-reveal-dmg { font-size: 0.9rem; color: #e88a80; font-weight: 800; }
     </style>
 </head>
 <body>
 
-<audio id="bgm" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-17.mp3" type="audio/mpeg"></audio>
+    <div id="audio-ctrl" title="開關音樂與音效">🔇</div>
+    <audio id="lobby-bgm" src="lobby.mp3" loop preload="auto"></audio>
+    <audio id="game-bgm" src="game.mp3" loop preload="auto"></audio>
 
-<div class="main-container">
-    <header><h1>成語·學苑</h1></header>
-
-    <div class="status-bar">
-        <div>琴音：<button onclick="toggleBGM()" id="bgm-btn" style="padding:0 5px; cursor:pointer;">播放</button></div>
-        <div>剩餘成語：<span id="remain-count">0</span> 組</div>
+    <div class="text-center mb-2 mt-2">
+        <h1 class="app-title">成語轉珠爬塔戰</h1>
     </div>
 
-    <div id="explanation-box">
-        <div id="exp-content">
-            <div class="exp-title">挑戰開始</div>
-            <div class="exp-mean">系統將嘗試高密度出題，請點擊「更換卷軸」開始。</div>
+    <div id="app" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+
+        <!-- ========== 初始畫面 ========== -->
+        <div id="screen-splash" class="screen active glass-panel">
+            <p class="subtitle">拖曳符石、交換位置，橫向或直向排出正確成語，一路爬向塔頂！</p>
+            <div style="font-size:56px; margin:6px 0;">🏯📜⚔️</div>
+            <button id="enter-lobby-btn" class="primary-btn">🚪 進入遊戲</button>
+            <p class="credits-text">設計：郭柏宏｜版本：20260910</p>
         </div>
+
+        <!-- ========== 開始畫面（大廳） ========== -->
+        <div id="screen-start" class="screen glass-panel">
+            <p class="subtitle">拖曳符石、交換位置，橫向或直向排出正確成語即可發動攻擊！</p>
+            <div class="rules-box">
+                <p>✏️ 拖曳任一符石到「相鄰」的格子即可互換位置（一次只交換一格）；只要交換後棋盤上出現橫排或直排連續4格排成「正確順序」的成語，就會消珠發動「成語攻擊」</p>
+                <p>📖 成語會依序組成動畫並顯示釋義，停留3秒後消失，接著從上方補新符石填滿</p>
+                <p>⚡ 消除後若連鎖產生更多成語，會觸發連擊並顯示連擊數、造成額外傷害</p>
+                <p>🎯 每一關都保證至少有 3 組成語解答（只差一次交換就能完成），低樓層解答數量較多，樓層越高解答數量越少</p>
+                <p>🀄 棋盤從 4×4 開始，每過 10 層就擴大一格區間（4×4→4×5→5×5→5×6→6×6…），最高擴大到 10×10</p>
+                <p>⏳ 請把握時間完成攻擊，逾時未攻擊將被怪物反擊！</p>
+                <p>🛡️ 每 5 層遭遇小BOSS，⚔️ 每 10 層遭遇大BOSS，時限會更短、更加緊張刺激</p>
+                <p>越往上層，怪物越強！💀 勇者HP歸零即結束挑戰，結束後可在排行榜留下你的大名</p>
+            </div>
+            <button id="start-btn" class="primary-btn">⚔️ 開始爬塔</button>
+            <button id="show-lb-btn" class="secondary-btn">🏆 排行榜</button>
+            <p class="credits-text">設計：郭柏宏｜版本：20260910</p>
+        </div>
+
+        <!-- ========== 遊戲畫面 ========== -->
+        <div id="screen-game" class="screen glass-panel">
+            <div class="floor-header">
+                <span id="floor-num-badge" class="floor-num-badge">第 1 層</span>
+                <span id="next-boss-info" class="next-boss-info"></span>
+                <button id="quit-btn" class="quit-btn" title="返回首頁">🏠</button>
+            </div>
+
+            <div id="play-area" class="play-area">
+                <div id="combo-display" class="combo-display"></div>
+
+                <div id="monster-area" class="monster-area tier-normal">
+                    <div id="tier-badge" class="tier-badge tier-normal">一般樓層</div>
+                    <div class="monster-visual">
+                        <div id="monster-emoji" class="monster-emoji">👹</div>
+                        <div id="monster-effects" class="effects-layer"></div>
+                    </div>
+                    <div id="monster-name" class="monster-name">妖怪</div>
+                    <div class="hpbar"><div id="monster-hp-fill" class="hpbar-fill monster-fill" style="width:100%"></div></div>
+                    <div id="monster-hp-text" class="hp-text">100 / 100</div>
+                </div>
+
+                <div id="player-area" class="player-area">
+                    <div class="player-row">
+                        <span>🧙 勇者 HP</span>
+                        <span id="player-hp-text">500 / 500</span>
+                    </div>
+                    <div class="hpbar"><div id="player-hp-fill" class="hpbar-fill player-fill" style="width:100%"></div></div>
+                    <div id="player-effects" class="effects-layer"></div>
+                </div>
+
+                <div id="timer-bar-wrap"><div id="timer-bar"></div></div>
+
+                <div id="board" class="board"></div>
+
+                <div id="idiom-reveal" class="idiom-reveal"></div>
+            </div>
+
+            <p id="turn-message" class="turn-message"></p>
+            <p class="hint-text-small">拖曳符石到相鄰格子即可互換，湊出橫排或直排的正確成語順序即可消珠攻擊！</p>
+        </div>
+
+        <!-- ========== 結束畫面 ========== -->
+        <div id="screen-gameover" class="screen glass-panel">
+            <h2 class="text-2xl font-bold" style="color:var(--seal);">💀 挑戰結束</h2>
+            <p style="color:var(--ink-soft);">你在第 <span id="final-floor" class="final-floor-num">1</span> 層倒下了...</p>
+            <input type="text" id="name-input" class="input-box" maxlength="12" placeholder="輸入你的大名" autocomplete="off">
+            <button id="submit-score-btn" class="primary-btn">📜 留名排行榜</button>
+        </div>
+
+        <!-- ========== 排行榜畫面 ========== -->
+        <div id="screen-leaderboard" class="screen glass-panel">
+            <h2 class="text-2xl font-bold" style="color:var(--seal);">🏆 爬塔排行榜</h2>
+            <div id="leaderboard-list" class="leaderboard-list"></div>
+            <button id="lb-restart-btn" class="primary-btn">⚔️ 再次挑戰</button>
+            <button id="lb-home-btn" class="secondary-btn">🏠 回首頁</button>
+        </div>
+
     </div>
 
-    <div class="mode-selector">
-        <button id="mode-fill-btn" class="active" onclick="switchMode('fill')">填空尋蹤</button>
-        <button id="mode-find-btn" onclick="switchMode('find')">墨中覓詞</button>
-    </div>
+    <script>
+        // ==========================================
+        // 1. 空間音響系統 (Spatial Audio API)
+        // ==========================================
+        let audioCtx, masterGain, delayNode, feedbackGain;
+        let bgmInterval = null;
+        let soundEnabled = false;
 
-    <div id="game-board"></div>
+        const pentatonic = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
 
-    <div class="btn-group">
-        <button class="main-btn" onclick="checkAll()" style="background:var(--ink); color:white;">核對答案</button>
-        <button class="main-btn" onclick="revealAll()" style="background:#7f8c8d; color:white;">揭曉謎底</button>
-        <button class="main-btn btn-stamp" onclick="initGame()">更換卷軸 (重新出題)</button>
-    </div>
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.7;
+            delayNode = audioCtx.createDelay();
+            delayNode.delayTime.value = 0.35;
+            feedbackGain = audioCtx.createGain();
+            feedbackGain.gain.value = 0.3;
+            delayNode.connect(feedbackGain);
+            feedbackGain.connect(delayNode);
+            delayNode.connect(masterGain);
+            masterGain.connect(audioCtx.destination);
+        }
 
-    <div class="settings-panel">
-        <strong>詞庫設定：</strong>
-        <textarea id="custom-lib">一箭雙鵰|比喻一舉兩得。|他在商場併購中解決債務又擴大版圖，真是一箭雙鵰。
-一鳴驚人|比喻平時無名，一舉動驚人。|他在這次競賽中奪冠，真是一鳴驚人。
-畫蛇添足|比喻做多餘的事，反而有害。|這篇文章結尾加這段簡直是畫蛇添足。
-狐假虎威|憑藉權勢欺壓他人。|他只不過是經理親戚，就這樣狐假虎威地教訓大家。
-亡羊補牢|出錯後設法補救。|現在開始努力亡羊補牢，期末考還有機會。
-龍飛鳳舞|形容書法筆勢有力。|王大師的書法龍飛鳳舞，深受收藏家喜愛。
-蛛絲馬跡|比喻極微小的線索。|警察在現場搜尋，不放過任何蛛絲馬跡。
-拔苗助長|急於求成，反而弄糟。|教育孩子要循序漸進，千萬不能拔苗助長。
-井底之蛙|比喻見識淺陋的人。|如果不去世界看看，很容易變成井底之蛙。
-破釜沉舟|比喻下決心不留後路。|他破釜沉舟地辭去工作，一心一意去創業。
-胸有成竹|做事之前已有通盤考量。|面對這次提報，他早已胸有成竹。
-水落石出|比喻事情真相大白。|經過警方調查，這件案子終於水落石出。
-刻舟求劍|比喻拘泥成法，不知變通。|時代在變，我們不能刻舟求劍，必須與時俱進。
-掩耳盜鈴|比喻自欺欺人。|明明大家都知道了，他還在掩耳盜鈴，試圖隱瞞。
-臥薪嚐膽|形容刻苦自勵，發憤圖強。|為了重振家業，他臥薪嚐膽，終於在十年後大展鴻圖。
-廢寢忘食|形容做事極為專心，努力不懈。|他為了完成這項研究，簡直到了廢寢忘食的地步。
-鍥而不捨|比喻有恆心，不輕易放棄。|憑著鍥而不捨的精神，他終於破解了這道數學難題。
-馬到成功|形容事情順利。|祝你這次考試馬到成功！
-力不從心|心裡想做，力量卻不夠。|年紀大了，做粗活總覺得力不從心。
-口是心非|嘴上說的和心裡想的不一樣。|他這人總是口是心非，難以信任。</textarea>
-    </div>
-</div>
+        function playTone(freq, type, attack, release, vol, useDelay = true) {
+            if (!soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(masterGain);
+            if (useDelay) gain.connect(delayNode);
+            const now = audioCtx.currentTime;
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(vol, now + attack);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + attack + release);
+            osc.start(now);
+            osc.stop(now + attack + release + 0.1);
+        }
 
-<script>
-    let currentMode = 'fill'; 
-    let board = [];
-    let placedIdioms = [];
-    let selectedCoords = [];
-    let idiomDict = {};
-    let hintMap = {}; 
-    let isBGMPlaying = false;
+        function playSynth(type) {
+            if (!soundEnabled || !audioCtx) return;
+            if (type === 'select') {
+                playTone(400 + Math.random() * 120, 'triangle', 0.005, 0.05, 0.06, false);
+            } else if (type === 'match') {
+                playTone(587.33 + Math.random() * 80, 'triangle', 0.02, 0.3, 0.3, true);
+                playTone(880, 'sine', 0.02, 0.25, 0.15, true);
+            } else if (type === 'bigcombo') {
+                const notes = [659.25, 783.99, 987.77, 1174.66];
+                notes.forEach((f, i) => setTimeout(() => playTone(f, 'triangle', 0.02, 0.4, 0.3, true), i * 80));
+            } else if (type === 'hurt') {
+                playTone(110, 'sawtooth', 0.01, 0.28, 0.5, false);
+                playTone(70, 'square', 0.01, 0.22, 0.35, false);
+            } else if (type === 'bossAppear') {
+                playTone(55, 'sawtooth', 0.02, 1.4, 0.5, true);
+                playTone(82.5, 'sawtooth', 0.05, 1.2, 0.35, true);
+            } else if (type === 'miniAppear') {
+                playTone(150, 'square', 0.02, 0.7, 0.35, true);
+            } else if (type === 'floorClear') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.05, 1.2, 0.35, true), i * 90));
+            } else if (type === 'gameover') {
+                const notes = [392.00, 349.23, 293.66, 220.00];
+                notes.forEach((f, i) => setTimeout(() => playTone(f, 'sawtooth', 0.02, 0.6, 0.4, true), i * 180));
+            } else if (type === 'click') {
+                playTone(440, 'sine', 0.02, 0.2, 0.2, true);
+            }
+        }
 
-    // Web Audio 音效
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playBeep(f, d) {
-        try {
+        function startBGM() {
+            if (bgmInterval) return;
+            bgmInterval = setInterval(() => {
+                if (!soundEnabled || !audioCtx) return;
+                const freq = pentatonic[Math.floor(Math.random() * pentatonic.length)];
+                playTone(freq / 2, 'sine', 2.0, 4.0, 0.15, true);
+            }, 2500);
+        }
+
+        function toggleAudio() {
+            initAudio();
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-            o.frequency.setValueAtTime(f, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d);
-            o.connect(g); g.connect(audioCtx.destination);
-            o.start(); o.stop(audioCtx.currentTime + d);
-        } catch(e) {}
-    }
-
-    function toggleBGM() {
-        const bgm = document.getElementById('bgm');
-        if(!isBGMPlaying) { 
-            bgm.play().catch(e => alert("請先與頁面互動（點擊任意處）才能播放音樂")); 
-            document.getElementById('bgm-btn').innerText = "暫停"; 
-        } else { 
-            bgm.pause(); 
-            document.getElementById('bgm-btn').innerText = "播放"; 
+            soundEnabled = !soundEnabled;
+            document.getElementById('audio-ctrl').innerText = soundEnabled ? "🔊" : "🔇";
+            document.getElementById('audio-ctrl').classList.toggle('bg-blue-500/30', soundEnabled);
+            if (soundEnabled) { startBGM(); playSynth('click'); }
+            else { clearInterval(bgmInterval); bgmInterval = null; }
         }
-        isBGMPlaying = !isBGMPlaying;
-    }
+        document.getElementById('audio-ctrl').addEventListener('click', toggleAudio);
 
-    function initGame() {
-        const boardEl = document.getElementById('game-board');
-        boardEl.innerHTML = '';
-        const libLines = document.getElementById('custom-lib').value.split('\n').filter(l => l.includes('|'));
-        idiomDict = {};
-        libLines.forEach(l => {
-            const [w, m, e] = l.split('|');
-            idiomDict[w.trim()] = { mean: m.trim(), example: e ? e.trim() : "（暫無例句）" };
+        // ==========================================
+        // 2. 366 題成語資料庫
+        // ==========================================
+        const rawIdiomsData = "一元復始^指新的一年開始。^丿,厶,一,冂,亻,二,日,又,彳,儿,一,女|大刀闊斧^形容做事果斷而有魄力。^口,下,一,丿,十,厂,八,人,氵,乂,刀,門|三思而行^勸人做事要反覆考慮。^一,丨,二,一,一,亅,一,心,彳,而,冂,一|四面楚歌^比喻孤立無援，陷入困境。^丆,可,⺈,木,疋,囗,囬,丁,儿,口,人,木|亡羊補牢^比喻出了問題及時修補。^一,衤,丨,亡,牛,冖,用,丷,十,一,一,丶|井底之蛙^形容見識淺薄的人。^氏,十,一,丨,一,一,厂,丶,丶,之,虫,井|半途而廢^做事沒恆心，中途放棄。^几,厂,朩,亼,弓,癶,牛,丷,而,丶,辶,又|守株待兔^比喻妄想不勞而獲。^十,儿,⺈,寺,寸,丶,彳,宀,木,一,口,八|畫蛇添足^多此一舉，反將事弄糟。^肀,一,冂,二,氵,它,⺗,龰,天,口,虫,土|破釜沉舟^下定決心，不顧一切幹到底。^厂,舟,王,乂,皮,人,几,八,冖,丷,口,氵|刻舟求劍^拘泥固執，不知變通。^一,从,亅,亼,舟,亥,丷,刂,口,刂,口,八|狐假虎威^藉著別人的權勢來欺人。^瓜,丿,虍,乙,亻,丿,丿,弋,一,女,叚,犭|掩耳盜鈴^比喻自欺欺人。^乚,龴,氵,耳,扌,大,⺈,曰,釒,皿,亽,人|指鹿為馬^顛倒是非，混淆黑白。^馬,為,丨,匕,口,广,丨,二,一,亅,比,コ|胸有成竹^做事之前已有通盤考慮。^⺆,丁,亇,勹,有,弋,冫,丿,凵,乂,丁,丿|飲水思源^不忘本，懂得感恩。^氵,欠,乀,亅,白,㇇,水,厂,飠,田,心,丿|雙管齊下^同時採用兩種辦法。^一,齊,一,隹,又,隹,⺮,丶,丨,㠯,冖,丶|熟能生巧^熟練了自然能領悟竅門。^⺆,冫,匕,丂,丸,土,匕,一,享,工,厶,灬|落井下石^乘人危急時加以陷害。^又,十,口,一,卜,丿,冂,厂,丨,一,氵,井|畫龍點睛^關鍵處加一筆使內容生動。^土,目,⺊,口,月,龶,一,冂,二,肀,黑,龍|鬼斧神工^技藝精巧，非人工所能及。^儿,丄,丿,日,厶,冂,礻,土,斤,父,丨,一|班門弄斧^在行家面前賣弄本事。^厂,門,刂,廾,土,乂,丶,一,八,下,王,王|洗心革面^徹底悔悟，改過自新。^心,丿,囬,一,革,丶,乙,丨,丿,氵,一,先|青出於藍^弟子勝過老師，後輩勝前輩。^監,冂,⺀,丨,丨,十,凵,方,人,龶,凵,二|臥薪嘗膽^刻苦自勵，發憤圖強。^⺼,言,日,人,匕,艹,尚,厂,八,臣,斤,亲|身歷其境^親身經歷那種境地。^禾,甘,禾,立,土,儿,厂,身,八,日,止,一|投筆從戎^拋棄文職，參軍報國。^从,又,十,彳,⺮,肀,二,龰,扌,口,几,戈|志同道合^志趣與理念完全一致。^口,一,丷,冂,几,一,辶,十,自,亼,丶,心|否極泰來^壞情況到頭，好運就降臨。^不,口,人,口,了,木,人,泰,八,十,一,又|安居樂業^百姓生活安定，工作愉快。^宀,一,木,女,丶,尸,幺,業,白,冂,十,幺|同舟共濟^團結一致，共同度過難關。^冂,一,舟,齊,丿,一,丶,一,氵,八,丨,几|一目十行^形容閱讀速度極快。^亅,一,一,一,一,一,彳,一,冂,一,丨,一|一日千里^形容進步神速或發展極快。^冂,一,一,一,十,一,冂,十,丨,一,丿,一|一鳴驚人^平時無聞，突然有驚人表現。^冂,勹,十,丨,馬,一,鳥,冂,一,人,一,攵|一塵不染^環境非常清潔，或人品純潔。^十,一,不,丨,广,九,氵,丨,八,土,コ,比|九牛一毛^極大數量中的極小部分。^丨,一,一,乚,丿,丿,丶,乙,一,一,牛,丿|大發雷霆^大發脾氣，大聲斥責。^雨,雨,又,廴,人,土,壬,几,癶,一,冂,弓|千鈞一髮^比喻情況萬分危急。^丿,友,十,釒,一,勹,丿,丶,丿,冫,镸,丿|以身作則^用實際行動做榜樣。^丿,卜,一,一,身,亻,二,以,刂,冂,八,一|出神入化^技藝達到了極高境界。^一,乚,丨,丿,一,凵,冂,入,亻,丨,礻,凵|百發百中^射擊技術高，每次命中。^白,癶,白,弓,乙,冂,一,一,丿,丨,又,一|未雨綢繆^事先做好準備防患未然。^一,雨,习,冂,糹,土,糹,人,彡,木,口,习|司空見慣^經常看到，不足為奇。^司,忄,口,八,一,丄,儿,八,二,宀,目,毌|目瞪口呆^受驚或不知所措的樣子。^癶,八,一,二,口,一,二,冂,冂,豆,口,十|名落孫山^考試或選拔未被錄取。^小,丨,凵,口,夕,子,丿,口,夂,幺,艹,氵|如火如荼^形容氣勢蓬勃熱烈。^丨,十,一,冂,丷,女,女,亼,冂,人,一,朩|字斟句酌^寫作或說話非常謹慎。^斗,二,勺,口,儿,匸,宀,日,卄,子,兀,勹|完璧歸趙^原物完整無損地歸還。^肖,止,帚,元,走,宀,㠯,口,玉,辛,尸,丿|見義勇為^看到正義的事就勇敢去做。^儿,弋,二,為,力,丨,丿,目,䒑,龴,用,扌|杞人憂天^缺乏根據的無謂憂慮。^又,一,一,八,人,人,頁,己,丨,一,丿,心|防微杜漸^在錯誤剛萌芽時就加以制止。^方,土,攵,彳,氵,山,車,兀,阝,八,十,斤|按圖索驥^照著線索去尋找事物。^馬,北,十,囗,冖,糸,口,田,安,㐭,扌,共|流連忘返^沉迷於某事物而忘記歸去。^辶,川,辶,厂,車,又,一,心,亡,丶,厶,氵|紙上談兵^空談理論，不能解決實際問題。^氏,糹,⺊,八,亠,口,一,二,火,丷,人,丘|栩栩如生^形容模樣生動逼真。^女,习,习,土,木,一,十,习,冂,一,习,八|氣象萬千^景色變化多端，非常壯觀。^冂,丿,丷,豕,日,厶,气,木,艹,口,⺈,十|旁觀者清^局外人看事情反而清楚。^目,一,龶,儿,方,雚,氵,丷,耂,亠,日,月|袖手旁觀^置身事外，不予理會。^一,方,衤,一,冂,由,亠,手,丷,二,雚,儿|望梅止渴^比喻用空想來安慰自己。^氵,亾,王,冂,每,亡,勹,丨,日,二,木,上|雪中送炭^在別人困難時給予幫助。^丷,大,人,山,口,一,厂,丷,雨,彐,丨,辶|捷足先登^行動快的人先達到目的。^口,先,癶,一,二,彐,一,亅,口,疋,丷,龰|理直氣壯^理由充分，說話氣勢壯盛。^士,田,爿,二,土,气,十,口,木,王,丷,一|眾志成城^大家齊心協力，力量強大。^土,丁,罒,人,戈,丁,人,弋,心,士,丿,人|循序漸進^按照一定的次序逐步進行。^十,斤,氵,彳,隹,口,厂,辶,車,予,广,二|無微不至^每一個細微處都照顧到。^無,攵,儿,丨,一,十,一,彳,不,厶,一,凵|朝三暮四^比喻心意不定，反覆無常。^日,日,日,艹,十,十,大,儿,月,囗,一,二|拔苗助長^急於求成，反把事情弄糟。^月,冂,亅,丶,土,丨,二,十,力,一,長,友|滄海一粟^形容極其渺小微不足道。^氵,覀,一,丷,每,口,人,尸,氵,十,八,丶|滔滔不絕^說話連續不斷。^不,刀,臼,氵,一,氵,巴,糹,丨,臼,爫,爫|無中生有^憑空捏造事實。^有,丨,丨,一,一,丿,一,無,丨,冂,一,一|對牛彈琴^對不懂理的人講道理。^羊,一,今,口,弓,甲,牛,王,业,寸,王,口|精益求精^好還要更好。^冂,月,木,一,二,龶,龶,米,丷,氺,水,皿|語無倫次^說話毫無條理。^五,欠,亻,亠,口,冂,卄,亼,冫,口,無,二|價值連城^形容物品十分珍貴。^十,貝,戈,亻,辶,一,覀,目,土,丁,車,亻|樂極生悲^快樂到了極點反而轉為悲哀。^叹,幺,一,木,非,幺,了,心,一,木,土,白|撥雲見日^比喻清除障礙，見到光明。^癶,二,厶,儿,几,口,一,扌,雨,目,又,弓|奮不顧身^奮勇向前，不顧生命危險。^一,人,隹,隹,一,丶,頁,不,身,十,尸,冂|機關算盡^費盡心思使用計謀。^二,皿,木,幺,丱,肀,幺,灬,幾,具,門,⺮|頭重腳輕^形容根基不穩。^一,千,卩,里,⺼,谷,口,丷,一,巠,頁,車|舉一反三^從一件事推知其他同類的事。^一,一,與,一,丨,亅,一,一,一,又,厂,一|聲名狼藉^名聲非常敗壞。^声,艮,口,耳,犭,廿,耒,艹,丶,殳,日,夕|一刀兩斷^堅決徹底地斷絕關係。^一,厂,丨,入,一,冂,刀,丨,丶,㡭,入,一|人山人海^形容聚集的人非常多。^凵,人,氵,丨,人,乀,每,丶,一,乙,丿,丨|三心二意^猶豫不決，意志不堅定。^心,丷,亠,一,一,冂,一,一,一,心,二,一|五花八門^比喻花樣繁多，變化多端。^五,八,丨,丨,乚,一,丿,門,亻,丿,丨,一|六神無主^形容心慌意亂，不知所措。^八,十,一,一,丶,亠,一,礻,無,丨,一,冂|七上八下^形容心裡慌亂不安。^⺊,一,丶,丶,一,一,一,丨,丿,乚,丨,八|八面玲瓏^形容人處世圓滑，面面俱到。^龍,十,八,人,一,龴,囬,丆,土,一,一,丶|九死一生^形容經歷極大危險而倖存。^丨,一,丿,勹,丶,乚,丿,乙,一,一,一,一|十全十美^完美無缺。^二,丨,丨,丨,大,一,一,䒑,一,丶,土,入|百戰百勝^每戰必勝，所向無敵。^白,口,口,甲,戈,力,一,一,白,龹,一,月|千變萬化^變化非常多。^艹,攵,糹,言,日,十,亻,厶,冂,丿,糹,匕|萬事大吉^所有事情都圓滿解決。^人,口,艹,冂,亅,口,彐,士,一,一,日,厶|明知故犯^明明知道不對卻故意去做。^日,丿,㔾,二,十,口,冂,攵,口,一,大,犭|見風轉舵^看局勢改變自己的態度。^匕,一,儿,寸,舟,叀,二,虫,宀,車,几,冂|口是心非^嘴裡說的和心裡想的不一樣。^丿,丨,丶,冂,一,一,非,一,心,疋,冂,一|心花怒放^形容非常高興。^又,乚,攵,心,方,女,亻,丿,丨,丨,一,心|手忙腳亂^做事慌張，沒有條理。^人,八,丨,冫,八,⺆,卩,亂,一,冂,亡,手|足智多謀^智謀很多。^龰,言,丿,夕,日,口,二,天,口,木,卄,夕|五體投地^極其崇敬欽佩。^五,一,也,曲,口,扌,丷,冎,土,一,⺼,殳|三頭六臂^比喻神通廣大，本領出眾。^口,十,頁,立,⺆,亠,尸,八,豆,二,一,冫|耳目一新^看到和聽到的都感到新鮮。^口,耳,一,厂,亅,亠,一,下,二,一,八,丷|口若懸河^能言善辯，說話不斷。^冂,幺,県,丁,右,口,一,心,丿,氵,艹,小|大驚小怪^對不足為奇的事表現驚訝。^八,土,勹,攵,人,馬,艹,亅,又,一,口,忄|小題大作^把小事當作大事來處理。^頁,人,一,丿,口,一,亻,下,一,疋,八,亅|天衣無縫^比喻事物完美自然，沒有破綻。^一,一,二,丨,衣,一,無,人,又,丿,糹,辶|水落石出^真相大白。^亅,㇇,氵,口,厂,屮,丿,口,凵,乀,艹,夂|風平浪靜^沒有風浪，比喻平靜無事。^几,氵,虫,爫,丶,龶,干,亅,丷,月,彐,艮|雷厲風行^做事果斷，行動迅速。^雨,彳,一,禸,厂,虫,冂,几,亍,艹,口,土|星羅棋布^形容數量多，分布廣泛。^罒,十,隹,丨,生,布,八,木,日,一,二,糹|日新月異^每天每月都有新的變化。^亅,厂,一,八,冂,口,下,二,立,一,共,田|海闊天空^形容胸懷開闊或言談無邊際。^氵,門,丿,八,口,每,工,宀,十,一,大,氵|山明水秀^風景優美。^乃,凵,一,丨,㇇,乀,口,冂,禾,二,丿,亅|花言巧語^虛假而動聽的話。^口,亻,工,二,言,口,匕,十,五,丨,丂,亠|草木皆兵^形容極度驚恐，疑神疑鬼。^八,匕,白,十,艹,日,厂,八,匕,一,十,下|一箭雙鵰^做一件事達到兩個目的。^隹,鳥,冂,又,隹,丷,⺮,刖,土,一,一,口|狡兔三窟^比喻藏身的地方多。^乂,尸,出,一,六,丶,儿,犭,二,穴,⺈,口|馬到成功^形容事情順利，一開始就成功。^馬,一,刂,力,一,弋,一,丿,丄,丁,厶,十|羊入虎口^比喻陷入危險的境地。^丨,丿,一,冂,乙,一,入,一,一,虍,丷,一|殺雞儆猴^懲罰一個人來警告其他人。^亻,爫,侯,攵,大,隹,殳,句,杀,幺,艹,犭|狗急跳牆^走投無路時不顧一切行動。^兆,土,彐,⺈,口,爿,从,龰,句,犭,心,回|牛鬼蛇神^比喻各種壞人。^日,牛,土,儿,宀,丿,匕,礻,冂,厶,丨,虫|龍飛鳳舞^形容書法筆勢奔放。^鳥,乙,龍,飛,丨,一,一,無,勹,丶,㐄,丿|雞飛狗跳^形容因為驚恐而混亂不堪。^幺,兆,口,飛,犭,勹,一,爫,口,龰,人,隹|蛛絲馬跡^比喻線索或痕跡。^幺,虫,八,冂,亦,糹,小,十,一,龰,一,馬|鴉雀無聲^形容非常安靜。^又,八,耳,牙,無,丿,声,亅,一,鳥,乙,隹|沉魚落雁^形容女子容貌美麗。^氵,口,隹,灬,厂,田,夂,冗,亻,⺈,艹,氵|心血來潮^突然產生的念頭。^人,氵,十,日,冂,十,二,丿,心,皿,人,木|肝膽相照^比喻真心誠意，以誠相待。^二,言,日,召,厂,干,木,灬,⺼,⺼,口,八|脣亡齒寒^比喻關係密切，利害相關。^人,⺆,寒,上,丨,冫,辰,从,亡,凵,一,人|毛骨悚然^形容極度害怕。^⺆,一,灬,乇,⺼,冫,八,忄,犬,十,冎,口|血氣方剛^形容年輕人精力旺盛。^气,䒑,凵,八,刂,丨,方,十,丷,皿,丿,冂|眉飛色舞^形容非常高興得意的神態。^丶,冂,尸,無,巴,飛,⺈,㐄,一,一,勹,一|手舞足蹈^高興到了極點。^丿,丶,丶,夕,無,龰,臼,丿,口,手,足,㐄|心如止水^形容心境平靜，毫無雜念。^一,冂,心,⺊,一,乀,亅,一,㇇,丿,女,丨|面紅耳赤^形容焦急、羞愧或發怒的樣子。^人,丿,糹,耳,丨,一,囬,丷,十,一,一,一|目不轉睛^眼珠子一動不動地盯著看。^龶,冂,二,口,冂,叀,二,一,不,寸,二,車|不恥下問^不以向身分較低的人請教為恥。^不,心,一,丶,一,丨,一,門,丿,冂,耳,丨|不可思議^無法想像，難以理解。^二,丁,丨,䒑,口,冂,心,土,言,扌,戈,不|不自量力^不能正確估計自己的力量。^一,力,一,一,十,十,自,冂,冂,不,一,一|不約而同^沒有事先約定而行動一致。^丶,丨,丶,冂,丿,而,乙,一,一,不,勹,糹|不知所措^不知道該怎麼辦才好。^扌,尸,不,廾,日,口,天,丿,一,丶,下,厂|不屈不撓^在困難面前不屈服。^一,尸,土,亅,儿,不,不,凵,屮,二,土,土|不速之客^沒有邀請而自己來的客人。^八,不,又,丿,口,十,冖,冂,丶,辶,之,一|名不虛傳^名聲與實際相符。^丶,一,冂,一,不,一,寸,亻,丱,勹,叀,虍|自相矛盾^說話或做事前後抵觸。^十,自,一,八,一,十,厂,矛,冂,冂,二,二|半信半疑^有些相信，又有些懷疑。^牛,一,冂,一,一,亻,丷,疑,牛,一,丶,丷|不可救藥^比喻情況嚴重到無法挽救。^艹,丁,攵,幺,一,八,幺,白,十,不,口,氺|自言自語^自己對自己說話。^二,亠,自,一,五,冂,亠,口,一,冂,自,二|理所當然^按道理應該這樣。^灬,田,王,⺌,犬,户,土,口,田,斤,冂,⺼|莫名其妙^無法理解其中的奧妙。^丿,口,艹,小,大,女,一,日,八,夕,二,卄|無價之寶^極其珍貴的東西。^缶,王,之,覀,無,口,二,宀,目,八,亻,八|無可奈何^沒有任何辦法。^無,一,人,丁,八,口,一,亻,丁,冂,亅,二|一無所有^什麼都沒有。^無,丨,丿,丶,一,厂,一,尸,一,有,丶,丨|全心全意^投入全部的心思和精力。^丷,心,亠,一,入,入,玉,心,一,王,丶,口|一心一意^心思專一。^心,一,心,一,一,丶,一,一,一,一,冂,丷|十萬火急^形容事情極度緊急。^人,一,丨,一,口,⺈,心,丷,彐,冂,艹,厶|一知半解^了解得不透徹。^一,冂,二,丷,天,牛,牛,口,丨,⺈,丿,刀|千載難逢^一千年也難遇到一次。^辶,隹,哉,八,由,丿,丰,十,夂,土,龷,車|萬無一失^絕對不會出差錯。^丿,丨,一,一,無,口,十,冂,一,厶,人,一|千真萬確^非常真實，毫無疑問。^十,目,禸,石,冖,十,隹,几,日,艹,丿,一|一落千丈^地位、景況或聲譽等急遽下降。^又,一,丨,冂,一,又,丿,一,丿,氵,十,十|一毛不拔^形容非常吝嗇。^一,不,丶,一,一,友,一,一,亅,乚,一,丿|一板一眼^說話或做事有條有理。^又,一,一,冂,一,一,一,厂,一,八,艮,丨|一帆風順^比喻事情進行得非常順利。^虫,丿,丨,頁,几,冂,丿,乙,丶,丨,丨,一|一敗塗地^形容失敗到了極點。^攵,一,也,口,十,氵,土,八,二,亼,朩,一|一勞永逸^辛苦一次，把事情辦好。^辶,丶,一,力,火,人,永,儿,⺈,冖,口,丷|一竅不通^什麼都不懂。^辶,二,一,攵,龴,冂,丨,宀,方,白,八,不|一觸即發^比喻極其危險的局勢。^虫,勹,癶,一,⺈,冂,即,二,罒,弓,殳,丨|一本正經^態度莊重嚴肅。^一,巛,丨,一,一,一,上,糹,十,一,丄,八|一視同仁^同樣看待，不分厚薄。^一,儿,冂,亻,一,礻,冂,二,二,一,丶,几|一鼓作氣^趁著士氣高昂時做事。^一,下,丿,又,气,木,十,口,丷,一,亻,土|一語道破^一句話就把真相說穿。^一,口,厂,五,口,二,自,丷,口,皮,亠,辶|一舉兩得^做一件事得到兩種好處。^一,亅,一,入,丨,二,寸,入,冂,彳,與,旦|二話不說^很乾脆地採取行動。^儿,八,二,口,不,口,口,千,言,一,一,亠|三顧茅廬^誠心誠意地邀請。^虍,艹,户,一,冂,广,矛,皿,二,土,隹,頁|四分五裂^形容不完整或不團結。^刀,五,勹,八,一,丶,刂,乚,衣,一,丿,冂|五顏六色^形容色彩繁多。^五,丿,巴,厂,丿,八,乂,亠,頁,丿,⺈,亠|六親不認^形容不重情義或鐵面無私。^儿,言,二,八,口,亠,立,心,刃,不,一,小|七零八落^形容零散稀疏的樣子。^丨,一,丿,亽,十,乚,又,八,雨,氵,口,龴|八仙過海^各自施展本領。^亻,冎,八,氵,丨,辶,一,丨,每,凵,冂,一|九霄雲外^形容非常高遠的地方。^厶,卜,丶,雨,雨,丿,二,⺆,勹,冫,⺌,乙|十拿九穩^非常有把握。^心,一,工,手,禾,亼,乙,丨,丿,彐,口,爫|百廢待舉^許多事情等著去做。^广,癶,寸,几,一,與,扌,土,又,白,彳,弓|千言萬語^說不完的話。^日,五,口,言,厶,亠,二,艹,冂,口,丿,十|萬水千山^形容路途遙遠險阻。^㇇,艹,冂,丿,凵,乀,厶,丨,十,亅,丿,日|不擇手段^為了達到目的不顧一切。^不,亅,一,二,手,罒,丷,段,十,丨,一,一|不甘示弱^不願表現得比別人差。^亅,十,弓,一,八,一,二,弓,丨,冫,冫,不|不勞而獲^自己不勞動卻占有別人的成果。^又,十,丷,犭,隹,人,冖,火,力,丨,不,而|不務正業^不從事正當的職業。^⺊,丨,矛,一,又,不,一,力,丿,一,業,丨|不知好歹^分不清好壞。^勹,冂,大,一,不,了,一,丿,丶,女,一,一|不解之緣^難以分開的緣分。^一,糹,丨,豕,牛,冂,一,⺈,之,彑,不,刀|不遺餘力^把所有力量都用上。^一,二,朩,八,不,力,飠,口,亼,辶,丨,口|心滿意足^非常滿足。^立,日,廾,巾,心,氵,龰,心,入,一,口,入|心猿意馬^心思不專一。^馬,心,一,一,衣,冂,一,心,犭,口,亠,丷|心直口快^性情直爽，說話不隱瞞。^一,冂,十,一,人,一,二,丨,心,冂,ユ,八|心驚肉跳^形容極度恐懼。^口,馬,攵,十,心,兆,丨,人,冂,龰,人,句|心領神會^不用言語說明就能領會。^礻,頁,龴,丶,一,丨,一,冂,人,一,心,會|心安理得^自認做的事情合乎道理。^一,土,心,丶,日,冖,寸,女,冂,彳,土,王|手到擒來^形容做事非常有把握。^厶,手,土,刂,凶,亠,木,人,一,禸,扌,从|手無寸鐵^手裡沒有任何武器。^一,冂,無,寸,丿,十,釒,一,手,弋,一,十|手足無措^形容舉止慌亂，不知如何是好。^手,亅,一,冂,廾,龰,冂,二,一,一,無,一|目光如豆^形容目光短淺，見識狹隘。^二,女,丷,一,一,一,口,冂,一,儿,⺌,口|目中無人^驕傲自大，看不起別人。^一,冂,一,無,人,丿,丨,冂,一,丨,一,一|目無全牛^技藝極其純熟。^一,一,入,無,牛,丨,一,一,丶,冂,一,一|口蜜腹劍^嘴甜心毒。^必,虫,冂,口,复,刂,从,口,一,宀,亼,⺼|口說無憑^單憑嘴說不足為信。^冂,冫,八,亠,口,一,儿,口,馬,二,心,無|耳濡目染^經常聽到看到，不知不覺受影響。^冂,氵,一,十,耳,乙,雨,氵,丿,八,而,二|耳提面命^懇切地教導。^亅,二,疋,日,龴,耳,冂,一,丶,囬,人,丆|頭破血流^被打得很慘。^厂,㐬,氵,口,丿,皮,皿,一,丷,頁,口,一|頭昏眼花^頭腦昏亂，眼睛發花。^艹,氏,艮,日,一,丷,匕,目,口,頁,一,亻|面不改色^遇到危險時神態從容。^⺈,不,丨,丶,一,巴,己,一,丿,丿,囬,攵|面目全非^事物的樣子改變得很厲害。^丶,二,囬,丿,一,一,一,十,冂,一,非,入|身敗名裂^地位喪失，名譽毀壞。^口,二,夕,身,口,攵,勹,衣,丶,八,一,刂|身強力壯^身體強壯，力氣大。^丩,一,丨,厶,力,一,一,丨,虫,弓,身,厂|言行一致^說的和做的一樣。^丁,一,彳,一,一,冂,一,攵,亠,二,厶,土|言不由衷^說的話不是發自內心。^一,不,一,一,衣,冂,一,丨,冂,丶,一,由|言簡意賅^言語簡明，意思完備。^日,門,亠,日,⺮,二,八,口,立,亥,目,心|花容月貌^形容女子容貌美麗。^八,口,人,爫,宀,冂,化,儿,白,犭,二,艹|草菅人命^把人命看作野草一樣輕視。^㠯,龴,日,十,艹,人,丶,冂,亽,一,艹,冖|樹大招風^名聲大或地位高容易惹麻煩。^虫,几,口,八,人,土,寸,亅,十,召,一,二|海市蜃樓^比喻虛幻的事物。^八,丶,女,丨,十,每,氵,一,冂,虫,辰,母|山珍海味^各種珍貴的食品。^彡,氵,土,每,人,一,口,十,八,凵,丨,一|水深火熱^形容人民生活極端痛苦。^坴,乀,丷,㇇,亅,人,木,丿,⺳,灬,氵,丸|風吹草動^比喻微小的變故。^日,口,⺈,田,十,虫,千,土,人,几,力,艹|風起雲湧^事物迅速發展，聲勢浩大。^厶,止,力,二,龴,几,土,用,氵,虫,雨,己|日薄西山^比喻事物接近衰亡。^凵,囗,冂,兀,一,用,氵,寸,丨,十,艹,一|日月如梭^形容時間過得很快。^口,二,丿,一,八,冂,口,又,女,十,厶,八|星火燎原^比喻小事發展為大勢。^火,水,日,人,厂,一,亅,八,昚,土,白,丷|天地為家^四處流浪。^也,豕,一,冖,丶,為,一,一,一,一,人,丨|天羅地網^上下四方嚴密包圍。^一,糹,罒,隹,土,一,大,冖,糹,八,亡,也|天真爛漫^性情純真，毫不掩飾。^几,氵,罒,八,束,大,一,火,又,門,直,日|天涯海角^形容極遠的地方。^土,厂,大,氵,一,氵,冂,每,丨,⺈,二,土|步步為營^防守嚴密，行動謹慎。^人,步,一,冖,丷,為,冂,人,丷,冂,步,一|自作自受^自己做錯事，自己承擔結果。^一,自,又,丿,冖,一,丨,自,丶,一,爫,亻|自以為是^總以為自己是對的。^以,丨,冂,一,一,疋,丿,丶,自,為,一,乙|自欺欺人^欺騙自己也欺騙別人。^二,甘,欠,人,十,八,欠,一,一,自,丨,八|自知之明^能正確了解自己的長處和缺點。^一,一,丿,口,一,冂,二,冂,之,人,一,自|自鳴得意^自己表示很得意。^冂,日,丷,一,鳥,亠,心,旦,彳,自,寸,一|半斤八兩^彼此一樣，不相上下。^丶,厂,丨,入,丨,八,牛,丷,入,一,一,冂|大公無私^秉公處理，不偏私。^一,人,丿,一,丨,一,厶,八,八,厶,丨,無|大智若愚^才智很高但不露鋒芒。^口,心,一,丿,厶,艹,人,日,日,右,冂,天|大器晚成^卓越的人才往往成就較晚。^一,人,口,口,丁,口,日,丶,口,戈,免,大|大材小用^把人才用在小事上。^八,才,一,人,八,冂,亅,一,一,丨,一,丨|小心翼翼^非常謹慎，不敢疏忽。^羽,习,一,共,田,八,十,冂,亅,习,共,心|小鳥依人^形容女孩嬌小可愛。^衣,乙,乀,八,一,丨,亻,丶,鳥,亅,丿,人|老生常談^聽慣了的沒有新意的話。^言,一,巾,⺌,人,火,匕,耂,冂,口,丷,土|老奸巨猾^閱歷深而非常狡猾。^巨,丿,冎,一,冫,一,女,⺆,十,十,匕,犭|多此一舉^做不必要的事。^一,丶,與,勹,一,丨,丶,⺊,勹,匕,亅,二|少見多怪^見識少，遇到平常事也覺得奇怪。^二,八,夕,丿,忄,土,儿,勹,丶,口,亅,又|長話短說^把長篇大論的話簡要地說出。^八,長,亠,丿,二,舌,口,豆,儿,天,言,口|真知灼見^正確而透徹的見解。^几,儿,勺,人,丿,目,口,一,目,十,天,丷|假公濟私^假借公家的名義謀取私利。^氵,一,丨,厶,叚,八,一,厶,丿,亻,齊,八|虛情假意^虛假不真實的情意。^一,立,忄,日,叚,亻,龶,丱,虍,心,二,冂|實事求是^從實際情況出發，尋求正確答案。^氺,宀,口,日,疋,彐,八,目,一,毌,亅,一|輕舉妄動^不經慎重考慮就輕率行動。^與,土,扌,亡,工,女,千,田,力,巛,一,車|重見天日^脫離黑暗，重見光明。^儿,丿,十,二,口,冂,土,一,土,大,一,口|厚此薄彼^重視這個，輕視那個。^艹,厂,子,寸,用,彳,匕,日,皮,十,止,氵|高瞻遠矚^目光遠大。^氺,尸,亠,蜀,目,詹,口,冋,辶,衣,口,目|低聲下氣^態度卑微屈從。^耳,气,几,又,卜,木,氏,声,一,丷,丶,亻|明察秋毫^眼光敏銳，能看清極細微的事。^月,火,日,⺼,示,毛,冖,亠,寸,宀,口,禾|暗箭傷人^在暗地裡用陰險手段傷害別人。^立,人,傷,一,刂,口,二,一,⺮,日,丷,冂|生龍活虎^形容活潑矯健，充滿生氣。^丿,丿,乙,冂,氵,虍,十,十,一,龍,一,一|死裡逃生^從極危險的境地中逃脫。^土,土,土,一,兆,衤,冂,匕,勹,辶,丶,一|同甘共苦^共同享受幸福，共同承擔艱苦。^十,一,八,艹,冂,丨,古,二,几,廾,丶,一|異曲同工^不同的做法收到同樣的效果。^丨,土,廾,一,八,丨,丄,口,凡,曰,冂,一|內憂外患^國內的變亂和外來的侵略。^心,卜,口,丿,夕,冂,丨,口,又,頁,入,心|外強中乾^表面強大，實際虛弱。^丶,丨,口,卜,弓,虫,厶,乞,日,十,十,勹|上行下效^上面的人怎麼做，下面的人就跟著做。^八,⺊,彳,乂,一,攵,亠,丨,丁,一,一,丶|下不為例^表示下次不能再這樣做。^一,亻,一,丨,丨,丶,丶,一,亅,為,不,勹|前車之鑑^把前人失敗的教訓當作借鑒。^一,車,一,一,釒,亅,冂,監,之,丨,一,丷|後顧之憂^來自後方或未來的憂患。^丿,丶,隹,夂,頁,心,幺,彳,之,尸,頁,又|左顧右盼^向左右兩邊看。^尸,一,頁,八,刀,隹,冂,右,丶,左,一,一|右出左入^形容變化無常。^乙,丶,丨,凵,右,丨,入,乀,凵,左,一,丿|東山再起^失敗後重新恢復地位。^冂,丨,凵,十,止,一,一,土,口,土,八,己|西裝革履^穿著西式服裝，皮鞋。^囗,夂,一,衣,彳,爿,亻,口,兀,士,革,尸|南轅北轍^行動和目的相反。^攵,丷,北,十,口,一,冂,車,十,衣,育,車|北風呼嘯^寒風吹拂。^片,冂,丩,丨,口,虫,厂,北,一,几,彐,乎|春暖花開^春天氣候溫暖，百花盛開。^爫,丨,春,亻,开,口,門,友,一,一,匕,十|夏日炎炎^夏天陽光強烈。^火,火,一,一,自,又,人,冂,丿,丷,一,火|秋高氣爽^秋空高朗，氣候涼爽。^冋,禾,木,乂,丷,大,亠,口,火,乂,爻,气|冬溫夏凊^子女孝順父母。^皿,月,龶,囗,一,人,自,夂,夂,⺀,冫,氵|喜出望外^遇到出乎意料的好事而高興。^冂,丶,王,勹,土,屮,亡,卜,口,二,口,凵|怒髮衝冠^極度憤怒。^心,彡,犮,冖,行,寸,千,土,田,元,奴,镸|哀鴻遍野^形容到處都是流離失所的災民。^扁,十,田,鳥,工,氵,辶,予,衣,冂,一,一|樂不思蜀^快樂得忘記了歸去。^不,白,幺,十,心,八,罒,勹,冂,虫,幺,土|生機盎然^充滿生機和活力。^丶,土,央,皿,木,一,犬,灬,戊,⺼,幺,幺|死灰復燃^比喻已經消失的惡勢力又重新活動。^火,匕,亻,火,灬,犬,厂,日,彳,⺼,夂,歹|病入膏肓^病情嚴重到無法醫治。^入,冫,广,亠,一,人,口,亡,⺼,冋,⺼,冂|老當益壯^年紀雖大但志氣更加豪邁。^匕,田,丿,厂,丩,冂,口,⺌,水,土,士,皿|年少無知^年紀輕，缺乏知識經驗。^丿,年,一,一,一,無,人,八,冂,一,丿,亅|男尊女卑^封建時代輕視婦女的觀念。^十,土,儿,寸,冂,一,丷,女,力,一,白,口|女中豪傑^女性中的傑出人物。^夕,八,十,口,豕,口,冋,丨,亠,女,㐄,亻|金玉滿堂^財富極多。^氵,入,巾,王,人,廿,土,入,王,尚,丷,丶|木已成舟^事情已成定局，無法改變。^一,丿,丿,一,已,丨,丨,亅,弋,一,八,舟|水到渠成^條件成熟，事情自然成功。^八,刂,丿,亅,氵,巨,㇇,丁,乀,戈,至,十|火上加油^比喻使人更憤怒或使事態更嚴重。^力,由,一,⺊,一,丷,丨,氵,丿,人,一,冂|土崩瓦解^徹底崩潰。^月,丨,刀,十,山,⺈,牛,瓦,二,月,一,冂|風花雪月^指詩歌中輕淡的內容，或男女情愛。^丨,十,一,亻,一,丿,彐,冂,虫,匕,乙,雨|雨過天晴^比喻情況由壞轉好。^人,口,一,冂,冎,一,一,辶,二,口,龶,雨|雷霆萬鈞^形容威力極大。^雨,釒,冂,廴,艹,雨,壬,日,禸,勹,冫,土|電光石火^比喻事物轉瞬即逝。^人,一,儿,丷,雨,乚,⺌,一,口,一,厂,冂|山崩地裂^形容聲勢浩大或發生重大事變。^衣,刂,冂,凵,山,月,二,一,丨,也,夕,土|川流不息^形容來往的人或車輛非常多。^不,亠,丨,丨,丿,自,丨,厶,心,丨,丿,氵|江河日下^比喻情況一天天壞下去。^一,一,氵,一,冂,冂,丁,丄,卜,氵,一,一|海枯石爛^形容意志堅定，永遠不改變。^門,束,厂,氵,木,丷,古,八,一,每,人,冂|雲開見日^比喻黑暗過去，光明到來。^二,一,一,雨,門,冂,儿,一,口,二,廾,厶|霧裡看花^形容看不清楚事物的本質。^化,夂,艹,力,雨,口,衤,田,土,矛,二,手|冰天雪地^形容冰雪漫天蓋地的寒冷景象。^亅,也,㇇,丿,彐,一,一,人,冫,雨,乀,土|雪上加霜^比喻接連遭受災難。^⺊,一,彐,冂,口,八,雨,雨,二,力,十,一|霜風淒緊^秋風寒冷迫人。^几,又,目,彐,氵,木,臣,女,虫,糸,雨,十|露水夫妻^指短暫的婚姻關係。^㇇,彐,丿,女,十,亅,大,雨,一,足,乀,各|日月光華^日月的輝煌光彩。^乚,華,一,一,一,一,冂,⺌,丿,一,冂,一|星羅雲布^分布很多。^一,二,糹,布,雨,隹,十,厶,罒,一,一,口|辰光荏苒^時光流逝。^十,辰,士,一,儿,丿,丨,冂,亻,⺌,土,艹|歲月如梭^時間過得很快。^十,冂,女,八,冂,八,丿,厶,一,歲,又,二|時光荏苒^時間漸漸過去。^士,冉,土,丿,寸,一,亻,艹,兀,口,艹,⺌|光陰似箭^形容時間過得極快。^月,丷,以,阝,兀,⺌,一,⺮,云,刂,今,亻|年華老去^青春消逝。^丨,厶,一,華,年,一,丨,一,丿,丿,乚,一|青春永駐^永遠保持年輕。^一,丨,一,馬,一,永,一,一,春,丶,龶,冂|白髮蒼蒼^形容極老。^十,彡,镸,友,丶,户,白,艹,丨,口,人,倉|黃口孺子^年幼無知的人。^一,八,冂,一,雨,由,一,而,一,子,廾,了|青梅竹馬^形容男女小時候天真無邪的感情。^一,一,丿,丿,十,龶,每,冂,八,丁,丁,馬|紅顏薄命^指美麗的女子命運不好。^令,口,甫,厂,艹,彡,文,氵,頁,糹,寸,工|黑白分明^比喻是非界限很清楚。^丨,一,一,刀,冂,黑,一,冂,白,一,八,一|花紅柳綠^形容春天的美麗景色。^亻,八,彑,丷,亅,工,糹,木,艹,糹,卯,匕|草長鶯飛^形容江南暮春的景色。^十,火,人,鳥,丨,冖,十,長,丷,飛,口,一|樹高千丈^比喻事物發展極大。^一,土,口,冂,口,丿,口,十,寸,又,亠,木|木人石心^意志堅定，不為誘惑所動。^丿,丨,丶,一,一,八,冂,一,人,丨,厂,心|葉落歸根^比喻事物總有一定的歸宿。^世,㠯,丿,帚,艹,木,艹,艮,木,各,氵,止|花開富貴^象徵吉祥富貴。^口,宀,艹,化,八,目,田,一,一,开,中,門|果實纍纍^結的果子很多。^目,田,糸,畾,田,八,田,宀,毌,田,木,糸|瓜熟蒂落^條件成熟了，事情自然成功。^灬,丸,立,亠,口,瓜,艹,子,各,巾,艹,氵|根深蒂固^基礎穩固，不容易動搖。^木,口,十,冖,艮,巾,囗,氵,艹,木,立,八|枝繁葉茂^枝葉繁密茂盛。^木,木,艹,世,艹,每,小,幺,攵,支,丿,戈|鳥語花香^形容春天的美好景象。^五,亠,二,丿,匕,鳥,亻,口,口,日,艹,木|獸醫之手^比喻醫術高明。^一,犬,殳,田,日,医,兀,口,手,口,之,口|魚躍龍門^比喻舉業成功或地位高升。^龍,口,一,十,冂,門,隹,习,习,龰,⺈,灬|龍馬精神^形容健旺非凡的精神。^八,二,丨,馬,龍,丷,礻,冂,一,口,龶,十|馬首是瞻^比喻服從指揮或跟隨別人。^亠,日,自,厂,冂,一,目,二,八,疋,馬,丷|羊腸小徑^形容曲折狹窄的小路。^䒑,勿,⺼,巛,旦,一,工,丨,彳,二,亅,八|猴年馬月^指不可知的年月。^馬,厂,犭,亻,一,二,一,人,丿,冂,年,⺈|雞鳴狗盜^比喻微不足道的本領。^隹,皿,爫,⺈,鳥,口,氵,犭,大,幺,人,句|犬馬之勞^表示心甘情願為別人效勞。^力,一,丷,丶,人,人,一,丷,之,冖,人,馬|豬狗不如^比喻人品極其低下。^豕,口,丿,不,勹,犭,十,冂,一,女,一,日|鼠目寸光^形容目光短淺。^一,一,一,一,乚,丨,丿,冂,⺌,鼠,一,寸|牛高馬大^身材高大。^冂,馬,一,一,冂,牛,冂,一,一,人,丶,一|虎背熊腰^形容體格健壯。^匕,⺼,⺼,⺼,厶,女,覀,北,几,虍,灬,匕|兔死狐悲^因同類的死亡而感到悲傷。^夕,丶,匕,一,犭,冂,⺈,心,一,瓜,非,儿|龍潭虎穴^比喻極其危險的地方。^口,虍,宀,丨,十,氵,一,几,日,八,丨,龍|蛇蠍心腸^形容人心狠毒。^⺼,旦,日,勿,亾,虫,欠,心,虫,匕,宀,勹|馬革裹屍^指軍人戰死沙場。^八,勹,十,一,革,尸,馬,丶,衣,冂,土,匕|羊質虎皮^外表雄武，內心怯弱。^下,虍,厂,几,皮,目,一,丨,斤,八,二,丷|猴子搏矢^不自量力。^犭,丿,一,了,矢,寸,十,厃,用,天,扌,亻|雞飛蛋打^比喻兩頭落空，一無所獲。^丿,隹,丶,丿,飛,疋,大,虫,扌,丶,幺,丁|狗尾續貂^比喻拿不好的東西接在好東西後面。^糹,八,豸,士,口,罒,尸,召,目,犭,勹,毛|豬突豨勇^比喻盲目冒進。^日,耂,八,犬,布,豕,龴,力,用,宀,豕,乂|琴棋書畫^古代文人必備的四種技藝。^聿,冂,王,曰,肀,今,土,王,木,其,二,一|詩詞歌賦^文學體裁的總稱。^弋,止,言,寺,一,司,言,八,可,欠,可,目|筆墨紙硯^文房四寶。^土,儿,厂,黑,彐,⺮,氏,二,目,糹,丨,口|亭台樓閣^泛指多種供遊賞、休息的建築物。^各,門,口,亠,厶,八,母,口,冖,十,女,丁|鍋碗瓢盆^廚房用具的總稱。^二,石,皿,覀,瓜,冎,釒,小,分,夗,宀,口|柴米油鹽^泛指日常生活必需品。^氵,丷,八,⺊,十,十,一,丨,鹽,匕,由,八|酸甜苦辣^比喻各種不同的遭遇。^八,艹,厶,立,甘,舌,兀,束,日,夂,古,十|煎炒烹炸^各種烹調方法。^少,丷,刖,亠,乍,火,灬,火,一,灬,口,了|吃喝玩樂^指追求物質享受。^王,乞,白,幺,幺,日,口,口,木,元,勹,亾";
+
+        const IDIOMS = [];
+        rawIdiomsData.split('|').forEach(item => {
+            const seg = item.split('^');
+            if (seg.length >= 2 && Array.from(seg[0]).length === 4) {
+                IDIOMS.push({ w: seg[0], h: seg[1], chars: Array.from(seg[0]) });
+            }
         });
+        const IDIOM_SET = new Set(IDIOMS.map(o => o.w));
+        const IDIOM_MAP = new Map(IDIOMS.map(o => [o.w, o.h]));
+        const CHAR_POOL = Array.from(new Set(IDIOMS.flatMap(o => o.chars)));
 
-        // --- 高密度生成演算法 V17 ---
-        let maxRetries = 20; // 盤面重試次數
-        let bestBoardState = null;
-        let maxPlacedCount = 0;
+        function randomFillerChar() { return CHAR_POOL[Math.floor(Math.random() * CHAR_POOL.length)]; }
 
-        for(let attempt = 0; attempt < maxRetries; attempt++) {
-            // 每次嘗試都重置
-            board = Array.from({ length: 10 }, () => Array(10).fill(null));
-            placedIdioms = [];
-            
-            // 隨機打亂詞庫
-            let words = Object.keys(idiomDict).sort(() => Math.random() - 0.5);
-            
-            // 嘗試將每一個詞都放進去 (暴力填充)
-            for (let word of words) {
-                // 1. 先嘗試交叉放置 (優先)
-                let connected = tryConnect(word);
-                // 2. 如果填空模式下無法交叉，嘗試尋找空位獨立放置 (Island Strategy)
-                // 這樣可以大幅增加畫面上的成語數量
-                if (!connected && currentMode === 'fill') {
-                     tryPlaceFreely(word);
-                }
-                // 找找看模式本來就是隨機放，邏輯在 generateFindModeLogic
-            }
+        // ==========================================
+        // 3. 成語方塊棋盤引擎（相鄰互換一次，橫/直排4連成語）
+        // ==========================================
+        let ROWS = 4, COLS = 4;
 
-            // 紀錄最佳結果
-            if (currentMode === 'fill') {
-                if (placedIdioms.length > maxPlacedCount) {
-                    maxPlacedCount = placedIdioms.length;
-                    // 深拷貝 board 和 placedIdioms 以保留最佳狀態
-                    bestBoardState = {
-                        board: JSON.parse(JSON.stringify(board)),
-                        placedIdioms: JSON.parse(JSON.stringify(placedIdioms))
-                    };
-                }
-                // 如果已經填了超過 8 個，就很棒了，提早結束
-                if (placedIdioms.length >= 8) break;
-            } else {
-                // 找找看模式
-                let success = generateFindModeLogic(words);
-                if (success) { // 找找看模式只要有 6 個以上就算成功
-                     bestBoardState = {
-                        board: JSON.parse(JSON.stringify(board)),
-                        placedIdioms: JSON.parse(JSON.stringify(placedIdioms))
-                    };
-                    break;
-                }
-            }
+        function boardDimsForFloor(f) {
+            const stageIndex = Math.floor((f - 1) / 10);
+            const m = Math.floor(stageIndex / 2);
+            let rows, cols;
+            if (stageIndex % 2 === 0) { rows = 4 + m; cols = 4 + m; }
+            else { rows = 4 + m; cols = 5 + m; }
+            rows = Math.min(rows, 10);
+            cols = Math.min(cols, 10);
+            return { rows, cols };
         }
 
-        // 恢復最佳狀態
-        if (bestBoardState) {
-            board = bestBoardState.board;
-            placedIdioms = bestBoardState.placedIdioms;
-        } else {
-            // 如果真的運氣太差，就用最後一次的結果 (極少發生)
+        function applyOrbSizing() {
+            const panelWidth = Math.min(window.innerWidth - 30, 436);
+            const gap = 6;
+            const bySize = (panelWidth - gap * (COLS - 1)) / COLS;
+            const size = Math.max(24, Math.min(62, Math.floor(bySize)));
+            document.documentElement.style.setProperty('--orb-size', size + 'px');
         }
 
-        hintMap = {}; // 重置提示
-        if (currentMode === 'fill') {
-            generateHints();
-            renderFillBoard();
-        } else {
-            renderFindBoard();
+        function updateBoardDimensions(f) {
+            const dims = boardDimsForFloor(f);
+            ROWS = dims.rows; COLS = dims.cols;
+            boardEl.style.gridTemplateColumns = `repeat(${COLS}, var(--orb-size))`;
+            boardEl.style.gridTemplateRows = `repeat(${ROWS}, var(--orb-size))`;
+            applyOrbSizing();
         }
-        updateRemainCount();
-        updateExplanationBox("挑戰開始", `本次共生成 ${placedIdioms.length} 組成語，請加油！`);
-    }
+        window.addEventListener('resize', applyOrbSizing);
 
-    // --- 填充邏輯 ---
+        const NORMAL_MONSTERS = [
+            { name: '石靈', emoji: '🗿' }, { name: '夜梟', emoji: '🦉' }, { name: '狐妖', emoji: '🦊' },
+            { name: '墨影', emoji: '🌑' }, { name: '竹靈', emoji: '🎋' }, { name: '山魈', emoji: '👹' },
+            { name: '鬼火', emoji: '🔥' }, { name: '蛇魅', emoji: '🐍' }, { name: '蝠魔', emoji: '🦇' },
+            { name: '蟲怪', emoji: '🐛' }, { name: '藤妖', emoji: '🌿' }, { name: '沼澤怪', emoji: '🐸' }
+        ];
+        const MINI_BOSS = [
+            { name: '赤炎虎', emoji: '🐯' }, { name: '寒冰狼', emoji: '🐺' }, { name: '鐵甲蟹', emoji: '🦀' },
+            { name: '幽冥鴉', emoji: '🐦' }, { name: '岩龍蜥', emoji: '🦎' }, { name: '雷角犀', emoji: '🦏' }
+        ];
+        const BIG_BOSS = [
+            { name: '饕餮', emoji: '👹' }, { name: '窮奇', emoji: '🐺' }, { name: '混沌獸', emoji: '🌀' },
+            { name: '燭龍', emoji: '🐉' }, { name: '九尾狐王', emoji: '🦊' }, { name: '鯤鵬', emoji: '🦅' },
+            { name: '饕餮王', emoji: '👺' }
+        ];
 
-    // 嘗試在任何空位放置 (不一定要交叉)
-    function tryPlaceFreely(word) {
-        // 嘗試隨機位置 50 次
-        for(let i=0; i<50; i++) {
-            let isV = Math.random() > 0.5;
-            let r = Math.floor(Math.random() * (isV ? 7 : 10));
-            let c = Math.floor(Math.random() * (isV ? 10 : 7));
-            if (canPlace(word, isV, r, c)) {
-                placeToBoard(word, isV, r, c);
-                return true;
-            }
+        let board = [];
+        let floor = 1;
+        let playerMaxHP = 500, playerHP = 500;
+        let monster = null;
+        let isBusy = false, dragging = false, gameActive = false;
+        let dragStartIdx = null;
+        let roundTimerInterval = null;
+        let roundDeadline = 0;
+
+        const boardEl = document.getElementById('board');
+        const monsterEmojiEl = document.getElementById('monster-emoji');
+        const monsterNameEl = document.getElementById('monster-name');
+        const monsterHpFillEl = document.getElementById('monster-hp-fill');
+        const monsterHpTextEl = document.getElementById('monster-hp-text');
+        const monsterAreaEl = document.getElementById('monster-area');
+        const monsterEffectsEl = document.getElementById('monster-effects');
+        const tierBadgeEl = document.getElementById('tier-badge');
+        const playerHpFillEl = document.getElementById('player-hp-fill');
+        const playerHpTextEl = document.getElementById('player-hp-text');
+        const playerAreaEl = document.getElementById('player-area');
+        const playerEffectsEl = document.getElementById('player-effects');
+        const floorNumBadgeEl = document.getElementById('floor-num-badge');
+        const nextBossInfoEl = document.getElementById('next-boss-info');
+        const comboDisplayEl = document.getElementById('combo-display');
+        const timerBarEl = document.getElementById('timer-bar');
+        const turnMessageEl = document.getElementById('turn-message');
+        const finalFloorEl = document.getElementById('final-floor');
+        const nameInputEl = document.getElementById('name-input');
+        const leaderboardListEl = document.getElementById('leaderboard-list');
+        const idiomRevealEl = document.getElementById('idiom-reveal');
+        const lobbyBgmEl = document.getElementById('lobby-bgm');
+        const gameBgmEl = document.getElementById('game-bgm');
+        lobbyBgmEl.volume = 0.5;
+        gameBgmEl.volume = 0.5;
+
+        function playLobbyMusic() {
+            gameBgmEl.pause();
+            if (lobbyBgmEl.paused) lobbyBgmEl.play().catch(() => {});
         }
-        return false;
-    }
+        function playGameMusic() {
+            lobbyBgmEl.pause();
+            gameBgmEl.currentTime = 0;
+            gameBgmEl.play().catch(() => {});
+        }
 
-    function tryConnect(word) {
-        if(placedIdioms.some(i => i.word === word)) return false;
-        // 收集所有可能的交叉點
-        let possible = [];
-        for(let p of placedIdioms) {
-            for(let i=0; i<4; i++) {
-                for(let j=0; j<4; j++) {
-                    if(p.word[i] === word[j]) {
-                        let isV = !p.isV, r = isV ? p.r - j : p.r + i, c = isV ? p.c + i : p.c - j;
-                        if(canPlace(word, isV, r, c)) possible.push({word, isV, r, c});
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        // ---- 橫排/直排4連成語比對 ----
+        function findLineMatches(b) {
+            const matches = [];
+            const usedCells = new Set();
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    const idxs = [0, 1, 2, 3].map(k => r * COLS + c + k);
+                    if (idxs.some(i => usedCells.has(i))) continue;
+                    const word = idxs.map(i => b[i]).join('');
+                    if (IDIOM_SET.has(word)) {
+                        matches.push({ tileIndices: idxs, word, hint: IDIOM_MAP.get(word) });
+                        idxs.forEach(i => usedCells.add(i));
                     }
                 }
             }
-        }
-        if(possible.length > 0) {
-            const spot = possible[Math.floor(Math.random() * possible.length)];
-            placeToBoard(spot.word, spot.isV, spot.r, spot.c);
-            return true;
-        }
-        return false;
-    }
-
-    function canPlace(word, isV, r, c) {
-        if(r<0 || c<0 || (isV && r+4>10) || (!isV && c+4>10)) return false;
-        for(let i=0; i<4; i++) {
-            let curR = isV?r+i:r, curC = isV?c:c+i;
-            // 檢查衝突：如果格子有字，必須跟我要填的字一樣
-            if(board[curR][curC] !== null && board[curR][curC] !== word[i]) return false;
-            
-            // 進階檢查：避免過度擁擠導致無法辨識 (可選，目前先不加，追求高密度)
-        }
-        return true;
-    }
-
-    function placeToBoard(word, isV, r, c) {
-        for(let i=0; i<4; i++) board[isV?r+i:r][isV?c:c+i] = word[i];
-        placedIdioms.push({word, isV, r, c, done: false});
-    }
-
-    // --- 找找看模式邏輯 ---
-    function generateFindModeLogic(words) {
-        board = Array.from({ length: 10 }, () => Array(10).fill(''));
-        placedIdioms = [];
-        let count = 0;
-        
-        for(let word of words) {
-            // 嘗試多次放置
-            for(let i=0; i<20; i++) {
-                let isV = Math.random() > 0.5;
-                let r = Math.floor(Math.random() * (isV ? 7 : 10));
-                let c = Math.floor(Math.random() * (isV ? 10 : 7));
-                let can = true;
-                for(let k=0; k<4; k++) if(board[isV?r+k:r][isV?c:c+k] !== '') { can = false; break; }
-                if(can) {
-                    for(let k=0; k<4; k++) board[isV?r+k:r][isV?c:c+k] = word[k];
-                    placedIdioms.push({word, done: false, r, c, isV}); 
-                    count++;
-                    break; // 成功放了一個就換下一個詞
+            for (let c = 0; c < COLS; c++) {
+                for (let r = 0; r <= ROWS - 4; r++) {
+                    const idxs = [0, 1, 2, 3].map(k => (r + k) * COLS + c);
+                    if (idxs.some(i => usedCells.has(i))) continue;
+                    const word = idxs.map(i => b[i]).join('');
+                    if (IDIOM_SET.has(word)) {
+                        matches.push({ tileIndices: idxs, word, hint: IDIOM_MAP.get(word) });
+                        idxs.forEach(i => usedCells.add(i));
+                    }
                 }
             }
-            if(count >= 12) break; // 找找看模式上限 12 個
+            return matches;
         }
-        return count >= 6; // 至少要有 6 個才算成功
-    }
 
-    // --- 渲染與互動 ---
-    function generateHints() {
-        placedIdioms.forEach(item => {
-            const indices = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
-            const hintIndices = indices.slice(0, 2); 
-            hintIndices.forEach(idx => {
-                const r = item.isV ? item.r + idx : item.r;
-                const c = item.isV ? item.c : item.c + idx;
-                hintMap[`${r},${c}`] = true;
+        // ---- 保證解答：安插「只差一次相鄰交換即可完成」的成語 ----
+        function pickLine(usedCells) {
+            for (let attempt = 0; attempt < 150; attempt++) {
+                const horizontal = Math.random() < 0.5;
+                let idxs;
+                if (horizontal) {
+                    if (COLS < 4) continue;
+                    const r = Math.floor(Math.random() * ROWS);
+                    const c = Math.floor(Math.random() * (COLS - 3));
+                    idxs = [0, 1, 2, 3].map(k => r * COLS + c + k);
+                } else {
+                    if (ROWS < 4) continue;
+                    const c = Math.floor(Math.random() * COLS);
+                    const r = Math.floor(Math.random() * (ROWS - 3));
+                    idxs = [0, 1, 2, 3].map(k => (r + k) * COLS + c);
+                }
+                if (idxs.some(i => usedCells.has(i))) continue;
+                return idxs;
+            }
+            return null;
+        }
+        function countNearMissSolutions(b, cap) {
+            let count = 0;
+            const seen = new Set();
+            function checkWindow(idxs) {
+                const word = idxs.map(i => b[i]).join('');
+                if (IDIOM_SET.has(word) && !seen.has(word)) { seen.add(word); count++; return; }
+                for (let k = 0; k < 3; k++) {
+                    const arr = idxs.map(i => b[i]);
+                    const t = arr[k]; arr[k] = arr[k + 1]; arr[k + 1] = t;
+                    const w2 = arr.join('');
+                    if (IDIOM_SET.has(w2) && !seen.has(w2)) { seen.add(w2); count++; return; }
+                }
+            }
+            for (let r = 0; r < ROWS; r++) for (let c = 0; c <= COLS - 4; c++) { checkWindow([0, 1, 2, 3].map(k => r * COLS + c + k)); if (count >= cap) return count; }
+            for (let c = 0; c < COLS; c++) for (let r = 0; r <= ROWS - 4; r++) { checkWindow([0, 1, 2, 3].map(k => (r + k) * COLS + c)); if (count >= cap) return count; }
+            return count;
+        }
+        function injectNearMiss(b, usedCells) {
+            const idiom = IDIOMS[Math.floor(Math.random() * IDIOMS.length)];
+            const line = pickLine(usedCells);
+            if (!line) return null;
+            const chars = idiom.chars.slice();
+            const sp = Math.floor(Math.random() * 3);
+            const t = chars[sp]; chars[sp] = chars[sp + 1]; chars[sp + 1] = t;
+            for (let i = 0; i < 4; i++) { b[line[i]] = chars[i]; usedCells.add(line[i]); }
+            return line;
+        }
+        function ensureNearMissCount(b, target) {
+            let count = countNearMissSolutions(b, target);
+            if (count >= target) return count;
+            let usedCells = new Set();
+            let guard = 0;
+            while (count < target && guard < 300) {
+                guard++;
+                const line = injectNearMiss(b, usedCells);
+                if (!line) { usedCells = new Set(); continue; }
+                count = countNearMissSolutions(b, target);
+            }
+            return count;
+        }
+        // 樓層越高，保證解答數量越少（下限固定為 3 組），並依目前棋盤容量限制上限
+        function targetSolutionCount(f) {
+            const desired = Math.round(6 - (f - 1) * 0.08);
+            const clamped = Math.max(3, Math.min(6, desired));
+            const capacity = Math.max(3, Math.floor((ROWS * COLS) / 4));
+            return Math.min(clamped, capacity);
+        }
+
+        function applyGravity() {
+            for (let c = 0; c < COLS; c++) {
+                const colVals = [];
+                for (let r = 0; r < ROWS; r++) {
+                    const v = board[r * COLS + c];
+                    if (v !== null && v !== undefined) colVals.push(v);
+                }
+                const emptyCount = ROWS - colVals.length;
+                const newCol = [];
+                for (let i = 0; i < emptyCount; i++) newCol.push(randomFillerChar());
+                for (const v of colVals) newCol.push(v);
+                for (let r = 0; r < ROWS; r++) board[r * COLS + c] = newCol[r];
+            }
+        }
+
+        function initBoard() {
+            board = Array.from({ length: ROWS * COLS }, () => randomFillerChar());
+            ensureNearMissCount(board, targetSolutionCount(floor));
+        }
+
+        function renderBoard(animateDrop) {
+            boardEl.innerHTML = '';
+            for (let idx = 0; idx < ROWS * COLS; idx++) {
+                const ch = board[idx];
+                const cell = document.createElement('div');
+                if (ch === null || ch === undefined) {
+                    cell.className = 'orb empty';
+                } else {
+                    cell.className = 'orb' + (dragging && idx === dragStartIdx ? ' held' : '');
+                    if (animateDrop) {
+                        cell.classList.add('drop-in');
+                        const row = Math.floor(idx / COLS);
+                        cell.style.animationDelay = (row * 45) + 'ms';
+                    }
+                    cell.dataset.index = idx;
+                    cell.textContent = ch;
+                }
+                boardEl.appendChild(cell);
+            }
+        }
+
+        // ==========================================
+        // 4. 拖曳符石到相鄰格子即可互換（單次交換，非連續轉珠）
+        // ==========================================
+        function cellIndexFromPoint(x, y) {
+            const rect = boardEl.getBoundingClientRect();
+            const cellW = rect.width / COLS, cellH = rect.height / ROWS;
+            const col = Math.floor((x - rect.left) / cellW);
+            const row = Math.floor((y - rect.top) / cellH);
+            if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return -1;
+            return row * COLS + col;
+        }
+        function isOrthogonalAdjacent(a, b) {
+            const r1 = Math.floor(a / COLS), c1 = a % COLS;
+            const r2 = Math.floor(b / COLS), c2 = b % COLS;
+            const dr = Math.abs(r1 - r2), dc = Math.abs(c1 - c2);
+            return (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+        }
+
+        let dragStartX = 0, dragStartY = 0;
+
+        function onPointerDown(e) {
+            if (isBusy || !gameActive || dragging) return;
+            const orbEl = e.target.closest('.orb');
+            if (!orbEl || orbEl.classList.contains('empty')) return;
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            dragging = true;
+            dragStartIdx = parseInt(orbEl.dataset.index, 10);
+            dragStartX = e.clientX; dragStartY = e.clientY;
+            try { orbEl.setPointerCapture(e.pointerId); } catch (err) {}
+            playSynth('select');
+            renderBoard();
+        }
+
+        function onPointerMove(e) {
+            if (!dragging) return;
+            if (e.cancelable) e.preventDefault();
+            const el = boardEl.querySelector(`.orb[data-index="${dragStartIdx}"]`);
+            if (!el) return;
+            const dx = e.clientX - dragStartX;
+            const dy = e.clientY - dragStartY;
+            const orbSizePx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--orb-size')) || 50;
+            const cdx = Math.max(-orbSizePx, Math.min(orbSizePx, dx));
+            const cdy = Math.max(-orbSizePx, Math.min(orbSizePx, dy));
+            el.style.transform = `translate(${cdx}px, ${cdy}px) scale(1.1)`;
+        }
+
+        function onPointerUp(e) {
+            if (!dragging) return;
+            dragging = false;
+            const fromIdx = dragStartIdx;
+            dragStartIdx = null;
+            const releaseX = (e && e.clientX !== undefined) ? e.clientX : dragStartX;
+            const releaseY = (e && e.clientY !== undefined) ? e.clientY : dragStartY;
+            const idx = cellIndexFromPoint(releaseX, releaseY);
+            if (idx >= 0 && idx !== fromIdx && isOrthogonalAdjacent(fromIdx, idx)) {
+                [board[fromIdx], board[idx]] = [board[idx], board[fromIdx]];
+                renderBoard();
+                resolveBoard();
+            } else {
+                renderBoard();
+            }
+        }
+
+        boardEl.addEventListener('pointerdown', onPointerDown);
+        window.addEventListener('pointermove', onPointerMove, { passive: false });
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+
+        // ==========================================
+        // 5. 戰鬥結算
+        // ==========================================
+        function computeIdiomDamage(comboIndex) {
+            const base = 58;
+            const comboBonus = 1 + (comboIndex - 1) * 0.5;
+            const floorBonus = 1 + floor * 0.01;
+            return Math.max(1, Math.round(base * comboBonus * floorBonus));
+        }
+
+        function spawnFloatText(container, text, type) {
+            const el = document.createElement('div');
+            el.className = 'float-text ' + type;
+            el.textContent = text;
+            el.style.left = (38 + Math.random() * 24) + '%';
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 1150);
+        }
+
+        function showComboPopup(n) {
+            comboDisplayEl.style.opacity = '';
+            comboDisplayEl.textContent = `${n} 連擊！`;
+            comboDisplayEl.classList.remove('combo-show', 'combo-mega');
+            void comboDisplayEl.offsetWidth;
+            comboDisplayEl.classList.add('combo-show');
+            if (n >= 3) comboDisplayEl.classList.add('combo-mega');
+        }
+
+        async function showIdiomReveal(revealData) {
+            idiomRevealEl.innerHTML = '';
+            if (revealData.length > 1) {
+                const comboLine = document.createElement('div');
+                comboLine.className = 'idiom-reveal-combo';
+                comboLine.textContent = `${revealData.length} 連擊！`;
+                idiomRevealEl.appendChild(comboLine);
+            }
+            revealData.forEach((cap, i) => {
+                const row = document.createElement('div');
+                row.className = 'idiom-reveal-row';
+                row.style.animationDelay = (i * 0.15) + 's';
+                const wordSpan = document.createElement('div');
+                wordSpan.className = 'idiom-reveal-word';
+                cap.word.split('').forEach((ch, ci) => {
+                    const charSpan = document.createElement('span');
+                    charSpan.className = 'idiom-reveal-char';
+                    charSpan.style.animationDelay = (i * 0.15 + ci * 0.08) + 's';
+                    charSpan.textContent = ch;
+                    wordSpan.appendChild(charSpan);
+                });
+                row.appendChild(wordSpan);
+                const hintP = document.createElement('div');
+                hintP.className = 'idiom-reveal-hint';
+                hintP.textContent = cap.hint;
+                row.appendChild(hintP);
+                const dmgP = document.createElement('div');
+                dmgP.className = 'idiom-reveal-dmg';
+                dmgP.textContent = `-${cap.dmg}`;
+                row.appendChild(dmgP);
+                idiomRevealEl.appendChild(row);
             });
-        });
-    }
-
-    function renderFillBoard() {
-        const boardEl = document.getElementById('game-board');
-        for(let r=0; r<10; r++) {
-            for(let c=0; c<10; c++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell' + (board[r][c] ? '' : ' empty');
-                if(board[r][c]) {
-                    if(hintMap[`${r},${c}`]) {
-                        cell.innerText = board[r][c]; cell.classList.add('fixed');
-                    } else {
-                        const input = document.createElement('input');
-                        input.maxLength = 1; input.dataset.ans = board[r][c];
-                        input.addEventListener('input', (e) => {
-                            if(e.target.value === input.dataset.ans) {
-                                input.classList.add('correct-fill');
-                                checkIdiomCompletion(r, c);
-                            }
-                        });
-                        cell.appendChild(input);
-                    }
-                }
-                boardEl.appendChild(cell);
-            }
+            idiomRevealEl.classList.add('show');
+            await sleep(3000);
+            idiomRevealEl.classList.remove('show');
+            idiomRevealEl.innerHTML = '';
         }
-    }
 
-    function renderFindBoard() {
-        const filler = "的一是在有不了中大來上國個到說們為子和人但也以得這出下著地於自後就而時可生能";
-        const boardEl = document.getElementById('game-board');
-        for(let r=0; r<10; r++) {
-            for(let c=0; c<10; c++) {
-                if(board[r][c] === '') board[r][c] = filler[Math.floor(Math.random()*filler.length)];
-                const cell = document.createElement('div');
-                cell.className = 'cell'; cell.innerText = board[r][c];
-                cell.onclick = () => handleFindClick(r, c, cell);
-                boardEl.appendChild(cell);
+        // 每次放開符石都要檢查是否有橫/直排成語成立；若成立則進行連鎖消除（連擊），否則回合繼續倒數
+        async function resolveBoard() {
+            clearInterval(roundTimerInterval);
+            isBusy = true;
+            let comboIndex = 0;
+            const allCaps = [];
+            while (true) {
+                const matches = findLineMatches(board);
+                if (matches.length === 0) break;
+                comboIndex++;
+                matches.forEach(mm => allCaps.push(mm));
+                matches.forEach(mm => mm.tileIndices.forEach(idx => {
+                    const el = boardEl.querySelector(`.orb[data-index="${idx}"]`);
+                    if (el) el.classList.add('matched');
+                }));
+                await sleep(300);
+                matches.forEach(mm => mm.tileIndices.forEach(idx => { board[idx] = null; }));
+                renderBoard();
+                await sleep(200);
+                applyGravity();
+                renderBoard();
+                await sleep(200);
             }
-        }
-    }
 
-    function checkIdiomCompletion(r, c) {
-        placedIdioms.forEach(item => {
-            if(item.done) return;
-            let current = ""; let full = true; let belongs = false;
-            for(let i=0; i<4; i++){
-                let cr = item.isV ? item.r + i : item.r;
-                let cc = item.isV ? item.c : item.c + i;
-                if(cr === r && cc === c) belongs = true;
-                const el = document.getElementById('game-board').children[cr*10+cc];
-                const input = el.querySelector('input');
-                let val = input ? input.value : el.innerText;
-                if(input && val !== input.dataset.ans) full = false;
-                current += val;
+            if (allCaps.length === 0) {
+                isBusy = false;
+                if (gameActive) resumeRoundTimer();
+                return;
             }
-            if(belongs && full && current === item.word) {
-                item.done = true; playBeep(880, 0.2); 
-                updateExplanation(item.word); updateRemainCount();
-            }
-        });
-    }
 
-    function handleFindClick(r, c, el) {
-        if(el.classList.contains('found')) return;
-        if(el.classList.contains('selected')) {
-            el.classList.remove('selected');
-            selectedCoords = selectedCoords.filter(p => !(p.r==r && p.c==c));
-        } else if(selectedCoords.length < 4) {
-            el.classList.add('selected');
-            selectedCoords.push({r, c});
-        }
-        if(selectedCoords.length === 4) {
-            const word = selectedCoords.map(p => board[p.r][p.c]).join('');
-            const match = placedIdioms.find(i => !i.done && (i.word===word || i.word===word.split('').reverse().join('')));
-            if(match) {
-                match.done = true; playBeep(1000, 0.2);
-                selectedCoords.forEach(p => document.getElementById('game-board').children[p.r*10+p.c].className = 'cell found');
-                updateExplanation(match.word); updateRemainCount();
-                selectedCoords = [];
-                if(placedIdioms.every(i => i.done)) { playBeep(1200, 0.5); alert("🎉 完美大功告成！"); }
+            const revealData = allCaps.map((cap, i) => ({ word: cap.word, hint: cap.hint, dmg: computeIdiomDamage(i + 1) }));
+            const totalDamage = revealData.reduce((s, r) => s + r.dmg, 0);
+
+            await showIdiomReveal(revealData);
+
+            monster.hp = Math.max(0, monster.hp - totalDamage);
+            spawnFloatText(monsterEffectsEl, `-${totalDamage}`, 'attack');
+            playSynth(allCaps.length > 1 ? 'bigcombo' : 'match');
+            updateHPBars();
+            if (allCaps.length > 1) { showComboPopup(allCaps.length); await sleep(500); }
+
+            ensureNearMissCount(board, targetSolutionCount(floor));
+            renderBoard();
+            await sleep(150);
+
+            if (monster.hp <= 0) {
+                await sleep(300);
+                await handleMonsterDefeated();
             } else {
-                setTimeout(() => {
-                    selectedCoords.forEach(p => document.getElementById('game-board').children[p.r*10+p.c].classList.remove('selected'));
-                    selectedCoords = [];
-                }, 300);
+                startNewRound();
+            }
+            isBusy = false;
+        }
+
+        async function handleMonsterDefeated() {
+            playSynth('floorClear');
+            turnMessageEl.innerHTML = `🎉 <b>${monster.name}</b> 被擊敗了！繼續向上爬吧！`;
+            turnMessageEl.classList.add('show');
+            await sleep(1300);
+            turnMessageEl.classList.remove('show');
+
+            const oldDims = boardDimsForFloor(floor);
+            floor++;
+            const newDims = boardDimsForFloor(floor);
+            const sizeChanged = (oldDims.rows !== newDims.rows || oldDims.cols !== newDims.cols);
+
+            playerHP = Math.min(playerMaxHP, playerHP + Math.round(playerMaxHP * 0.08));
+            spawnMonster(floor);
+
+            if (sizeChanged) {
+                turnMessageEl.innerHTML = `🀄 棋盤擴大：${oldDims.rows}×${oldDims.cols} → ${newDims.rows}×${newDims.cols}`;
+                turnMessageEl.classList.add('show');
+                await sleep(1100);
+                turnMessageEl.classList.remove('show');
+            }
+
+            updateBoardDimensions(floor);
+            initBoard();
+            renderBoard(sizeChanged);
+            updateFloorUI();
+            updateHPBars();
+            startNewRound();
+        }
+
+        async function monsterAttack() {
+            const variance = 0.85 + Math.random() * 0.3;
+            const dmg = Math.max(1, Math.round(monster.atk * variance));
+            playerHP = Math.max(0, playerHP - dmg);
+            spawnFloatText(playerEffectsEl, `-${dmg}`, 'hurt');
+            playSynth('hurt');
+            playerAreaEl.classList.add('shake');
+            monsterAreaEl.classList.add('shake');
+            updateHPBars();
+            await sleep(450);
+            playerAreaEl.classList.remove('shake');
+            monsterAreaEl.classList.remove('shake');
+            if (playerHP <= 0) {
+                await sleep(300);
+                gameOverSequence();
             }
         }
-    }
 
-    function updateRemainCount() { document.getElementById('remain-count').innerText = placedIdioms.filter(i => !i.done).length; }
-    function updateExplanationBox(title, mean, example="") {
-        document.getElementById('exp-content').innerHTML = `
-            <div class="exp-title">【${title}】</div>
-            <div class="exp-mean"><strong>解釋：</strong>${mean}</div>
-            ${example ? `<div class="exp-example"><strong>例句：</strong>${example}</div>` : ""}
-        `;
-    }
-    function updateExplanation(word) { const data = idiomDict[word]; updateExplanationBox(word, data.mean, data.example); }
-    function switchMode(m) { currentMode = m; document.getElementById('mode-fill-btn').className = m==='fill'?'active':''; document.getElementById('mode-find-btn').className = m==='find'?'active':''; initGame(); }
-    function checkAll() {
-        const ins = document.querySelectorAll('input'); let ok = 0;
-        ins.forEach(i => { if(i.value === i.dataset.ans) { i.classList.add('correct-fill'); ok++; } });
-        alert(`目前正確數：${ok}`);
-    }
-    function revealAll() {
-        if(!confirm("揭曉謎底？")) return;
-        document.querySelectorAll('input').forEach(i => { i.value = i.dataset.ans; i.disabled = true; });
-        placedIdioms.forEach(item => {
-            if(currentMode==='find') item.coords.forEach(p => document.getElementById('game-board').children[p.r*10+p.c].classList.add('found'));
-            item.done = true;
+        async function handleRoundTimeout() {
+            clearInterval(roundTimerInterval);
+            if (!gameActive || isBusy) return;
+            isBusy = true;
+            dragging = false; dragStartIdx = null;
+            renderBoard();
+            turnMessageEl.innerHTML = `⏰ 時間到！被 <b>${monster.name}</b> 偷襲了！`;
+            turnMessageEl.classList.add('show');
+            await monsterAttack();
+            await sleep(300);
+            turnMessageEl.classList.remove('show');
+            if (gameActive) startNewRound();
+            isBusy = false;
+        }
+
+        // 開新的一回合：重設時限（時限條回到滿格）
+        function startNewRound() {
+            if (!gameActive) return;
+            const duration = monster.timeLimit;
+            roundDeadline = Date.now() + duration;
+            timerBarEl.style.transition = 'none';
+            timerBarEl.style.width = '100%';
+            requestAnimationFrame(() => {
+                timerBarEl.style.transition = `width ${duration}ms linear`;
+                timerBarEl.style.width = '0%';
+            });
+            resumeRoundTimer();
+        }
+        // 繼續同一回合的倒數（例如玩家嘗試交換但沒有成語成立時，回合並未結束，倒數繼續）
+        function resumeRoundTimer() {
+            clearInterval(roundTimerInterval);
+            roundTimerInterval = setInterval(() => {
+                if (Date.now() >= roundDeadline) handleRoundTimeout();
+            }, 100);
+        }
+
+        // ==========================================
+        // 6. 樓層 / 怪物產生
+        // ==========================================
+        function monsterStats(f) {
+            let hp = Math.round(70 + f * 24 + Math.pow(f, 1.3) * 3.2);
+            let atk = Math.round(9 + f * 2.3 + Math.pow(f, 1.05));
+            let tier = 'normal', timeLimit = 9000;
+            if (f % 10 === 0) { tier = 'boss'; hp = Math.round(hp * 3.2); atk = Math.round(atk * 1.8); timeLimit = 5000; }
+            else if (f % 5 === 0) { tier = 'mini'; hp = Math.round(hp * 1.85); atk = Math.round(atk * 1.4); timeLimit = 7000; }
+            return { hp, atk, tier, timeLimit };
+        }
+
+        function spawnMonster(f) {
+            const stats = monsterStats(f);
+            const pool = stats.tier === 'boss' ? BIG_BOSS : stats.tier === 'mini' ? MINI_BOSS : NORMAL_MONSTERS;
+            const pick = pool[Math.floor(Math.random() * pool.length)];
+            monster = { name: pick.name, emoji: pick.emoji, hp: stats.hp, maxHp: stats.hp, atk: stats.atk, tier: stats.tier, timeLimit: stats.timeLimit };
+            updateMonsterUI();
+            if (stats.tier === 'boss') playSynth('bossAppear');
+            else if (stats.tier === 'mini') playSynth('miniAppear');
+        }
+
+        function updateFloorUI() {
+            floorNumBadgeEl.textContent = `第 ${floor} 層`;
+            let tierLabel = '一般樓層', tierClass = 'tier-normal';
+            if (monster.tier === 'boss') { tierLabel = '⚔️ 大BOSS'; tierClass = 'tier-boss'; }
+            else if (monster.tier === 'mini') { tierLabel = '🛡️ 小BOSS'; tierClass = 'tier-mini'; }
+            tierBadgeEl.textContent = tierLabel;
+            tierBadgeEl.className = 'tier-badge ' + tierClass;
+            monsterAreaEl.className = 'monster-area ' + tierClass;
+            const nextMini = (Math.floor(floor / 5) + 1) * 5;
+            const nextBoss = (Math.floor(floor / 10) + 1) * 10;
+            const solCount = targetSolutionCount(floor);
+            nextBossInfoEl.textContent = `${ROWS}×${COLS}棋盤｜本層解答數≥${solCount}｜時限${(monster.timeLimit / 1000).toFixed(0)}秒｜小BOSS:${nextMini}層 大BOSS:${nextBoss}層`;
+        }
+
+        function updateMonsterUI() {
+            monsterEmojiEl.textContent = monster.emoji;
+            monsterNameEl.textContent = monster.name;
+            updateFloorUI();
+            updateHPBars();
+        }
+
+        function updateHPBars() {
+            const mPct = monster.maxHp > 0 ? Math.max(0, monster.hp / monster.maxHp * 100) : 0;
+            monsterHpFillEl.style.width = mPct + '%';
+            monsterHpTextEl.textContent = `${Math.max(0, monster.hp)} / ${monster.maxHp}`;
+            const pPct = Math.max(0, playerHP / playerMaxHP * 100);
+            playerHpFillEl.style.width = pPct + '%';
+            playerHpTextEl.textContent = `${Math.max(0, playerHP)} / ${playerMaxHP}`;
+            playerHpFillEl.style.background = pPct < 25 ? 'linear-gradient(to right,#c9564a,var(--seal))' : (pPct < 50 ? 'linear-gradient(to right,#d4a54a,var(--gold))' : 'linear-gradient(to right,#7fae7f,var(--jade))');
+        }
+
+        // ==========================================
+        // 7. 遊戲流程與畫面切換
+        // ==========================================
+        function showScreen(name) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + name).classList.add('active');
+        }
+
+        function startGame() {
+            playSynth('click');
+            playGameMusic();
+            playerMaxHP = 500; playerHP = 500; floor = 1;
+            gameActive = true; isBusy = false; dragging = false; dragStartIdx = null;
+            spawnMonster(floor);
+            updateBoardDimensions(floor);
+            initBoard();
+            renderBoard(true);
+            updateFloorUI();
+            updateHPBars();
+            turnMessageEl.textContent = '';
+            turnMessageEl.classList.remove('show');
+            comboDisplayEl.style.opacity = '0';
+            showScreen('game');
+            startNewRound();
+        }
+
+        function gameOverSequence() {
+            gameActive = false;
+            clearInterval(roundTimerInterval);
+            playSynth('gameover');
+            finalFloorEl.textContent = floor;
+            nameInputEl.value = '';
+            showScreen('gameover');
+        }
+
+        // ==========================================
+        // 8. 排行榜 (localStorage)
+        // ==========================================
+        const LB_KEY = 'idiom_orb_tower_leaderboard';
+        function loadLeaderboard() {
+            try { return JSON.parse(localStorage.getItem(LB_KEY) || '[]'); } catch (e) { return []; }
+        }
+        function saveLeaderboard(list) { localStorage.setItem(LB_KEY, JSON.stringify(list)); }
+        function escapeHtml(s) {
+            return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        function rankIcon(i) { return ['🥇', '🥈', '🥉'][i] || (i + 1); }
+
+        function submitScore(name) {
+            const list = loadLeaderboard();
+            list.push({ name: (name || '無名英雄').slice(0, 12), floor: floor, date: new Date().toLocaleDateString('zh-TW') });
+            list.sort((a, b) => b.floor - a.floor);
+            saveLeaderboard(list.slice(0, 30));
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            const list = loadLeaderboard();
+            leaderboardListEl.innerHTML = list.length ? list.map((e, i) => `
+                <div class="lb-row ${i < 3 ? 'lb-top' : ''}">
+                    <span class="lb-rank">${rankIcon(i)}</span>
+                    <span class="lb-name">${escapeHtml(e.name)}</span>
+                    <span class="lb-floor">第 ${e.floor} 層</span>
+                    <span class="lb-date">${e.date}</span>
+                </div>`).join('') : `<p class="text-gray-400 text-sm">尚無紀錄，快來挑戰塔頂吧！</p>`;
+        }
+
+        // ==========================================
+        // 9. 事件綁定
+        // ==========================================
+        document.getElementById('enter-lobby-btn').addEventListener('click', () => {
+            playSynth('click');
+            playLobbyMusic();
+            showScreen('start');
         });
-        updateRemainCount();
-    }
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('show-lb-btn').addEventListener('click', () => {
+            playSynth('click');
+            playLobbyMusic();
+            renderLeaderboard();
+            showScreen('leaderboard');
+        });
+        document.getElementById('quit-btn').addEventListener('click', () => {
+            if (!isBusy && confirm('確定要放棄本次挑戰嗎？進度將不會保存到排行榜。')) {
+                gameActive = false;
+                clearInterval(roundTimerInterval);
+                playLobbyMusic();
+                showScreen('start');
+            }
+        });
+        document.getElementById('submit-score-btn').addEventListener('click', () => {
+            submitScore(nameInputEl.value.trim());
+            playLobbyMusic();
+            showScreen('leaderboard');
+        });
+        nameInputEl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('submit-score-btn').click();
+        });
+        document.getElementById('lb-restart-btn').addEventListener('click', startGame);
+        document.getElementById('lb-home-btn').addEventListener('click', () => {
+            playLobbyMusic();
+            showScreen('start');
+        });
 
-    initGame();
-</script>
-
+        renderLeaderboard();
+        showScreen('splash');
+    </script>
 </body>
-
 </html>
